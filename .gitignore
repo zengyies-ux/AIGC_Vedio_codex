@@ -1,0 +1,7 @@
+.DS_Store
+tmp/
+**/.tmp/
+__MACOSX/
+*.zip
+__pycache__/
+*.pyc
