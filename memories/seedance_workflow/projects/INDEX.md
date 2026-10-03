@@ -2,23 +2,14 @@
 
 ## 当前活动项目
 
-- [I Paid a Biker $10, He Protected Me for Ten Years / EP8—EP13](./biker_ten_dollars_ep08_13/project_overview.md)
-  - 状态：EP8—EP13全部片段均已完成制作，当前进入集中审核批改；EP13片段01 V5已通过，片段02 V2与片段03 V2已生成待审核。
-  - 当前状态：[production_state.md](./biker_ten_dollars_ep08_13/production_state.md)
-  - 当前素材：[assets/README.md](./biker_ten_dollars_ep08_13/assets/README.md)
-  - 当前文本：[prompts/INDEX.md](./biker_ten_dollars_ep08_13/prompts/INDEX.md)
+- [I Paid a Biker $10, He Protected Me for Ten Years / EP8—EP13](./biker_ten_dollars_ep08_13/production_state.md)
+  - [固定设定](./biker_ten_dollars_ep08_13/project_overview.md) · [素材](./biker_ten_dollars_ep08_13/assets/README.md) · [当前文本与采用](./biker_ten_dollars_ep08_13/prompts/INDEX.md)
+- [He catfished me for being fat. So I married a billionaire / EP9—EP14](./catfished_billionaire_ep09_14/production_state.md)
+  - [固定设定](./catfished_billionaire_ep09_14/project_overview.md) · [素材](./catfished_billionaire_ep09_14/assets/README.md) · [当前文本与采用](./catfished_billionaire_ep09_14/prompts/INDEX.md)
+- [The Mafia Heir's Second-Chance Bride / EP14—EP19](./mafia_heirs_second_chance_bride_ep14_19/production_state.md)
+  - [固定设定](./mafia_heirs_second_chance_bride_ep14_19/project_overview.md) · [素材](./mafia_heirs_second_chance_bride_ep14_19/assets/README.md) · [当前文本与采用](./mafia_heirs_second_chance_bride_ep14_19/prompts/INDEX.md)
 
-- [He catfished me for being fat. So I married a billionaire / EP9-14](./catfished_billionaire_ep09_14/project_overview.md)
-  - 当前状态：[production_state.md](./catfished_billionaire_ep09_14/production_state.md)
-  - 当前审片：[EP11 V2.1／EP12 V2短补镜返修方案](./catfished_billionaire_ep09_14/reviews/ep11_v21_ep12_v2_team_review_2026-09-11.md)
-  - 状态：组长审片后局部返修；只补EP11／EP12被点名镜头，不重做整段30秒。
-
-- [The Mafia Heir's Second-Chance Bride / EP14-19](./mafia_heirs_second_chance_bride_ep14_19/project_overview.md)
-  - 状态：EP14—EP19均已制作，仍处于审核与局部返修；只按用户点名范围继续，不主动重开已认可片段。
-  - 当前状态：[production_state.md](./mafia_heirs_second_chance_bride_ep14_19/production_state.md)
-  - 当前文本与采用情况：[prompts/INDEX.md](./mafia_heirs_second_chance_bride_ep14_19/prompts/INDEX.md)
-  - 当前素材：[assets/README.md](./mafia_heirs_second_chance_bride_ep14_19/assets/README.md)
-  - 历史按需读取：[早期导演地图](./mafia_heirs_second_chance_bride_ep14_19/episode_map_14_19.md)、[历史制作记录](./mafia_heirs_second_chance_bride_ep14_19/production_history.md)
+具体进度与决定只在各项目制作状态维护；总索引用于定位，不由“全部制作完成”推断审核通过。历史只在当前决定缺失或冲突时查。
 
 ## 已完成
 
