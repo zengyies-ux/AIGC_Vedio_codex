@@ -5,3 +5,9 @@ __MACOSX/
 *.zip
 __pycache__/
 *.pyc
+
+# Local rendering and inspection cache
+.codex_tmp/
+
+# Keep explicitly published workflow packages
+!releases/*.zip
