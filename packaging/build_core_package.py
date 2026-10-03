@@ -31,6 +31,8 @@ CORE_FILES = [
     "memories/seedance_workflow/prompt_template.md",
     "memories/seedance_workflow/continuity_and_review.md",
     "memories/seedance_workflow/director_patterns.md",
+    "memories/seedance_workflow/animal_city_motion.md",
+    "memories/seedance_workflow/visual_language_learning_notes.md",
     "memories/seedance_workflow/live_action_dialogue_drama.md",
     "memories/seedance_workflow/field_lessons.md",
     "memories/seedance_workflow/projects/PROJECT_TEMPLATE.md",

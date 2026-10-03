@@ -14,8 +14,8 @@
 
 | 位置 | 内容 |
 |---|---|
-| `memories/seedance_workflow/` | 导演方法、执行规则、模板与案例 |
-| `memories/seedance_workflow/projects/` | 各项目剧本、状态、素材、提示词与复盘 |
+| `memories/seedance_workflow/` | 分工明确的导演流程、执行与接续规则、既有模板及按需案例 |
+| `memories/seedance_workflow/projects/` | 当前状态入口、稳定设定、真实资产、采用索引及可追溯历史 |
 | `packaging/`、`releases/` | 供团队使用的核心学习包及发布记录 |
 | `Skill/`、`团队专项SOP/` | 保留的社区资料与团队文档，非默认AI规则入口 |
 
@@ -29,4 +29,4 @@
 
 Git版本保留目录内的规则、历史项目、正式素材、旧版提示词和既有发行包；临时渲染目录与系统缓存不进入Git，但保存在完整快照中。项目目录外的素材引用、其他聊天记录与账号配置不在本备份范围内。
 
-需要恢复时，从相应标签或Release下载到新目录核对，保留现有工作目录。核心学习包的版本独立于本仓库备份版本。
+本地重构在 `codex/seedance-workflow-refactor` 分支分阶段提交，原标签保留；验收记录见 [CHANGELOG.md](CHANGELOG.md)。需要恢复时，从相应标签或Release下载到新目录核对，保留现有工作目录。核心学习包的版本独立于本仓库备份版本。

@@ -1,25 +1,22 @@
-# Seedance 核心知识库
+# Seedance 核心知识库地图
 
-> 本页是子目录地图，不是新的规则入口。另一位Codex应先读仓库根目录`AGENTS.md`；用户本轮最新明确决定始终优先。
+唯一规则入口是根目录[AGENTS.md](../../AGENTS.md)。本页用于定位文件，日常按阶段和具体问题读取，不默认通读方法库或项目历史。
 
-本目录根层只保留可复用、已验证或明确标注为观察的知识；`projects/`另行保存项目事实与历史，除非用户明确继续对应项目，否则不读取其正文。
-
-| 文件 | 职责 |
+| 文件 | 唯一维护职责与入口 |
 |---|---|
-| `director_os.md` | 当前剧本到画面设计的最短流程 |
-| `model_behavior.md` | Seedance如何理解任务、版本边界和常见上限 |
-| `seedance_2_5_technical_notes.md` | 当前2.5制作基线、官方能力摘要与来源；替代旧2.0资料的默认能力入口 |
-| `execution_rules.md` | 素材、空间、动作、声音、光线与后期规则 |
-| `prompt_template.md` | 已验证的执行提示词骨架 |
-| `continuity_and_review.md` | 动态站位、源视频接续、内部审片和复盘方法 |
-| `director_patterns.md` | 按叙事任务选择镜头链 |
-| `visual_language_learning_notes.md` | 外部镜头与视觉转译资料的精华、弃用项和待验证边界 |
-| `live_action_dialogue_drama.md` | 真人大量对白剧规则入口，等待真实项目后建设 |
-| `field_lessons.md` | 匿名失败案例、修正和验证结果 |
-| `projects/` | 项目模板、当前状态、素材与提示词版本索引；历史记录按需读取 |
+| [director_os.md](director_os.md) | 剧本事实、人物目的与回应、情绪、功能场景和分段判断 |
+| [execution_rules.md](execution_rules.md) | 素材、空间、动作表演、现场声音与三时轴、真实切点及镜数、摄影执行 |
+| [continuity_and_review.md](continuity_and_review.md) | 原生／延长选择、当前制作约束、实际源片、跨段状态与依赖、审片证据及精准返修 |
+| [prompt_template.md](prompt_template.md) | 现有制作设置、角色映射、正文骨架与信息归属、一次成稿检查；具体方法链接到对应规则 |
+| [model_behavior.md](model_behavior.md) | 模型理解及有证据范围的观察、版本边界；不把用户选择解释成模型机制 |
+| [seedance_2_5_technical_notes.md](seedance_2_5_technical_notes.md) | 官方资料摘要、核对日期与当次平台适用边界；当前制作规则链接到维护处 |
+| [director_patterns.md](director_patterns.md) | 按当前叙事与镜头任务检索方法、有效例子及适用条件 |
+| [field_lessons.md](field_lessons.md) | 按失败现象检索匿名案例、原因假设、修法及验证状态 |
+| [animal_city_motion.md](animal_city_motion.md) | 拟人动物耳、尾、毛发、爪与身体重心的主动表演；真人不加载 |
+| [visual_language_learning_notes.md](visual_language_learning_notes.md) | 外部方法来源、采用／弃用项及待验证边界 |
+| [live_action_dialogue_drama.md](live_action_dialogue_drama.md) | 待真实项目建设的对白剧入口，避免误套旁白短剧节奏 |
+| [projects/INDEX.md](projects/INDEX.md) | 项目定位；当前事实进状态页，固定设定进概览，素材与采用关系各进对应索引 |
 
-核心规则只从真实成片反馈升级。历史项目名称保留在仓库根目录 `PROJECT_HISTORY.md`，不参与新提示词上下文。
+拆解／分段读导演流程，正式提示词读采用设计、素材与模板，局部返修读用户反馈、可用基线及受影响接缝；遇到具体疑难才加读执行或方法章节。同一要求只在上表职责文件完整维护，其他文件保留短提示与链接。
 
-外部学习方法在`director_patterns.md`单独标注，不冒充已验证经验；用户已确认的创作边界可直接执行。完整工作仓库可能另存旧2.0社区Skill，干净核心学习包不包含它；具体规格不足时不拿旧限制补空。
-
-用户明确更新的工作方式立即覆盖旧方法。项目内以`production_state.md`为当前进度依据，以`prompts/INDEX.md`查找适用版本；标为历史的地图、制作记录与复盘不得反向覆盖当前决定。`团队专项SOP/`是面向人类组员、尚待单独修订的材料，不属于本知识库规则。
+新反馈先留在项目复盘，明确的新用户决定立即按适用范围执行；可推广经验更新唯一维护位置并保留证据。单次观察、外部学习方法、官方宣称与当前平台／用户制作约束分别标明。完整工作仓库的旧2.0社区资料、团队SOP与项目历史不自动参与新任务。
