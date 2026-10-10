@@ -36,6 +36,7 @@
 | 实际源片与返修证据 | [接续/验收](continuity_and_review.md#review-and-repair) |
 
 这些来自用户反馈和当前项目规则，不是官方机制或成功率保证。观察和版本比较见[模型记录](model_behavior.md#evidence-boundaries)。
+⚠️再次强调提醒seedance模型没有上下文能力！除非视频延长！（并且视频延长也没有说绝对的准确的上下文能力，只是大概保证站位不改变）
 
 ## 4. 镜头语言学习边界
 
