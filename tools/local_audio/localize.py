@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+from datetime import datetime, timezone
 import hashlib
 import importlib.metadata
 import json
@@ -334,6 +335,190 @@ def add_groups(rows: list[dict], groups: list[list[str]]) -> tuple[list[dict], l
     return output, warnings
 
 
+def read_reference(path: Path) -> dict:
+    def unique_keys(pairs):
+        result = {}
+        for key, value in pairs:
+            if key in result:
+                raise ValueError(f"Duplicate reference key: {key}")
+            result[key] = value
+        return result
+    return json.loads(path.read_text(), object_pairs_hook=unique_keys)
+
+
+def valid_number(value) -> bool:
+    return not isinstance(value, bool) and isinstance(value, (int, float)) and math.isfinite(value) and value >= 0
+
+
+def alignment_blockers(dialogues: list[dict], anchors: list[dict], matched: dict,
+                       requested_anchor_ids: list[str] = ()) -> list[str]:
+    """Shared content checks; neither a reference nor a reply can hide missing text."""
+    blockers = []
+    if set(requested_anchor_ids) != {p["id"] for p in anchors}:
+        blockers.append("requested_anchor_not_matched")
+    if matched.get("script_tokens", 0) <= 0 or matched.get("exact_tokens") != matched.get("script_tokens"):
+        blockers.append("script_alignment_incomplete")
+    hard_issues = {"missing_or_asr_changed_tokens", "incomplete_boundary", "ambiguous_repeat",
+                   "zero_or_negative_estimated_duration"}
+    rows = matched.get("units", [])
+    for row in rows:
+        for issue in hard_issues.intersection(row.get("issues", [])):
+            blockers.append(f"{row['id']}:{issue}")
+        if row.get("kind") == "dialogue" and not row.get("speaker"):
+            blockers.append(f"{row['id']}:script_speaker_not_provided")
+    if any(r.get("kind") == "dialogue" for r in rows) and not dialogues:
+        blockers.append("dialogue_groups_not_provided")
+    grouped_ids = []
+    for group in dialogues:
+        if not group.get("source_count") or group.get("source_count") != group.get("matched_count") or len(group.get("unit_ids", [])) != group.get("source_count"):
+            blockers.append(f"{group['id']}:source_group_pairing_incomplete")
+        grouped_ids.extend(group.get("unit_ids", []))
+    if len(set(grouped_ids)) != len(grouped_ids):
+        blockers.append("dialogue_unit_reused_across_groups")
+    if set(grouped_ids) != {r["id"] for r in rows if r.get("kind") == "dialogue"}:
+        blockers.append("script_dialogue_group_coverage_incomplete")
+    starts = [r.get("estimated_start") for r in rows]
+    ends = [r.get("estimated_end") for r in rows]
+    if not rows or not all(valid_number(v) for v in starts + ends):
+        blockers.append("script_unit_timing_incomplete")
+    else:
+        body_start, body_end = min(starts), max(ends)
+        for word in matched.get("unused_asr_tokens", []):
+            begin, end = word.get("start"), word.get("end")
+            if not valid_number(begin) or not valid_number(end) or end < begin:
+                blockers.append("unmatched_asr_timing_invalid")
+            elif (begin < body_end and end > body_start) or (begin == end and body_start < begin < body_end):
+                blockers.append("unmatched_asr_inside_script_body")
+                break
+    return list(dict.fromkeys(blockers))
+
+
+def evaluate_reference(dialogues: list[dict], anchors: list[dict], matched: dict,
+                       reference: dict | None, audio_sha: str,
+                       requested_anchor_ids: list[str] = ()) -> dict:
+    """Adoption by explicit user references; never claim playback accuracy."""
+    outcome = dict(automatic_pass=False, adoption_status="no_user_reference",
+                   tolerance_seconds=2.0, comparison_points=[], blockers=[],
+                   maximum_absolute_difference_seconds=None,
+                   playback_verified=False, measured_boundary_error_seconds=None)
+    if reference is None:
+        outcome["blockers"] = ["user_reference_not_provided"]
+        return outcome
+    blockers = outcome["blockers"]
+    outcome["adoption_status"] = "user_reference_not_passed"
+    if not isinstance(reference, dict):
+        blockers.append("reference_schema_invalid")
+        return outcome
+    if reference.get("basis") != "user_supplied":
+        blockers.append("reference_basis_not_user_supplied")
+    if reference.get("audio_file_sha256") != audio_sha:
+        blockers.append("reference_audio_fingerprint_mismatch")
+    tolerance = reference.get("tolerance_seconds")
+    if isinstance(tolerance, bool) or not isinstance(tolerance, (int, float)) or not math.isfinite(tolerance) or tolerance != 2.0:
+        blockers.append("reference_tolerance_must_be_2_seconds")
+    refs_d, refs_a = reference.get("dialogue_groups"), reference.get("anchors")
+    if not isinstance(refs_d, dict) or not isinstance(refs_a, dict):
+        blockers.append("reference_groups_or_anchors_missing")
+        return outcome
+    ids_d = {p["id"] for p in dialogues}
+    ids_a = set(requested_anchor_ids or [p["id"] for p in anchors])
+    if set(refs_d) != ids_d:
+        blockers.append("reference_dialogue_point_set_mismatch")
+    if set(refs_a) != ids_a or {p["id"] for p in anchors} != ids_a:
+        blockers.append("reference_anchor_point_set_mismatch")
+    blockers.extend(alignment_blockers(dialogues, anchors, matched, list(ids_a)))
+    for category, points, refs in [("dialogue", dialogues, refs_d), ("anchor", anchors, refs_a)]:
+        for point in points:
+            item = refs.get(point["id"])
+            fields = ["start", "end"] if category == "dialogue" else ["start"]
+            if not isinstance(item, dict) or not all(valid_number(item.get(field)) for field in fields):
+                blockers.append(f"{point['id']}:reference_boundary_missing_or_invalid")
+                continue
+            if category == "dialogue" and item["end"] <= item["start"]:
+                blockers.append(f"{point['id']}:reference_interval_invalid")
+                continue
+            if not all(valid_number(point.get("estimated_" + field)) for field in fields):
+                blockers.append(f"{point['id']}:estimated_boundary_missing_or_invalid")
+                continue
+            differences = {field + "_difference_seconds": point["estimated_" + field] - item[field] for field in fields}
+            maximum = max(abs(v) for v in differences.values())
+            passed = maximum <= 2.0 + 1e-9
+            outcome["comparison_points"].append(dict(id=point["id"], **differences,
+                maximum_absolute_difference_seconds=maximum, passed=passed))
+            if not passed:
+                blockers.append(f"{point['id']}:reference_difference_exceeds_2_seconds")
+    if outcome["comparison_points"]:
+        outcome["maximum_absolute_difference_seconds"] = max(p["maximum_absolute_difference_seconds"] for p in outcome["comparison_points"])
+    else:
+        blockers.append("no_reference_points_compared")
+    outcome["blockers"] = list(dict.fromkeys(blockers))
+    outcome["automatic_pass"] = not outcome["blockers"]
+    if outcome["automatic_pass"]:
+        outcome["adoption_status"] = "user_reference_passed"
+    return outcome
+
+
+def make_candidate(audio_sha: str, pcm_sha: str, duration: float, matched: dict,
+                   dialogues: list[dict], anchors: list[dict], requested_anchors: list[dict],
+                   warnings: list[str], source_content_hashes: dict) -> dict:
+    """Stable complete candidate identity, without paths, runtime or reply data."""
+    value = dict(candidate_schema="1", audio_file_sha256=audio_sha, decoded_pcm_sha256=pcm_sha,
+                decoded_duration_seconds=duration, source_origin_seconds=0,
+                source_content_hashes=source_content_hashes, matching=matched,
+                dialogue_groups=dialogues, anchors=anchors, requested_anchors=requested_anchors,
+                warnings=warnings)
+    return json.loads(json.dumps(value, ensure_ascii=False, allow_nan=False))
+
+
+def evaluate_confirmation(candidate: dict, confirmation: dict | None) -> dict:
+    """Record explicit consent to these candidates, never invent a timing reference."""
+    candidate_sha = transcript_sha(candidate)
+    blockers = alignment_blockers(candidate["dialogue_groups"], candidate["anchors"],
+        candidate["matching"], [p["id"] for p in candidate["requested_anchors"]])
+    if not candidate["dialogue_groups"] and not candidate["anchors"]:
+        blockers.append("no_candidate_points_to_confirm")
+    outcome = dict(automatic_pass=False, adoption_status="candidate_pending_user_confirmation",
+        candidate_content_sha256=candidate_sha, blockers=blockers, confirmation_fact=None,
+        user_confirmation_recorded=False, simulated_adoption_pass=False,
+        playback_verified=False, measured_boundary_error_seconds=None,
+        maximum_absolute_difference_seconds=None, comparison_points=[])
+    if confirmation is None:
+        if blockers:
+            outcome["adoption_status"] = "candidate_requires_correction"
+        return outcome
+    outcome["adoption_status"] = "candidate_confirmation_not_passed"
+    if not isinstance(confirmation, dict):
+        blockers.append("confirmation_schema_invalid")
+        return outcome
+    if confirmation.get("audio_file_sha256") != candidate["audio_file_sha256"]:
+        blockers.append("confirmation_audio_fingerprint_mismatch")
+    if confirmation.get("candidate_content_sha256") != candidate_sha:
+        blockers.append("confirmation_candidate_fingerprint_mismatch")
+    if confirmation.get("confirmed") is not True:
+        blockers.append("explicit_candidate_confirmation_required")
+    basis = confirmation.get("basis")
+    if basis not in ("user_explicit", "test_simulation"):
+        blockers.append("confirmation_basis_invalid")
+    note = confirmation.get("confirmation_note")
+    if basis == "user_explicit" and (not isinstance(note, str) or not note.strip()):
+        blockers.append("confirmation_reply_missing")
+    # Store a fact only for an exact affirmative tied to the current content.
+    consent_errors = [b for b in blockers if b.startswith("confirmation_") or b == "explicit_candidate_confirmation_required"]
+    if not consent_errors:
+        outcome["confirmation_fact"] = {**confirmation,
+            "recorded_at_utc": datetime.now(timezone.utc).isoformat()}
+        outcome["user_confirmation_recorded"] = basis == "user_explicit"
+    outcome["blockers"] = list(dict.fromkeys(blockers))
+    if not blockers:
+        if basis == "test_simulation":
+            outcome["simulated_adoption_pass"] = True
+            outcome["adoption_status"] = "candidate_confirmation_simulated"
+        else:
+            outcome["automatic_pass"] = True
+            outcome["adoption_status"] = "user_confirmed_candidates"
+    return outcome
+
+
 def write_clips(pcm: bytes, points: list[dict], output: Path) -> list[dict]:
     duration, clips = len(pcm) / 32000, []
     folder = output / "review_clips"
@@ -363,16 +548,25 @@ def main() -> None:
     parser.add_argument("--episode", type=int)
     parser.add_argument("--dialogue-docx", type=Path)
     parser.add_argument("--anchors-json", type=Path, help="list of {id, unit_id}; historical_seconds is comparison only")
+    parser.add_argument("--reference-times-json", type=Path, help="explicit user reference boundaries and audio SHA; adoption tolerance 2 seconds")
+    parser.add_argument("--candidate-confirmation-json", type=Path, help="explicit reply tied to the audio and complete candidate hashes; not a timing reference")
     parser.add_argument("--cache", type=Path, default=Path(".codex_tmp/audio_v3"))
     parser.add_argument("--out", type=Path, default=Path(".codex_tmp/audio_v3/result"))
     parser.add_argument("--force-transcribe", action="store_true", help="performance benchmark only; bypass transcript cache")
     args = parser.parse_args()
+    if args.reference_times_json and args.candidate_confirmation_json:
+        raise ValueError("Choose user reference comparison or candidate confirmation, not both")
     started = time.perf_counter()
     cache, output = args.cache.absolute(), args.out.absolute()
-    inputs = [p for p in [args.audio, args.script, args.dialogue_docx, args.anchors_json] if p is not None]
-    planned = [output / "result.json", output / "result.json.tmp", output / "review.md"]
+    inputs = [p for p in [args.audio, args.script, args.dialogue_docx, args.anchors_json,
+                          args.reference_times_json, args.candidate_confirmation_json] if p is not None]
+    request_path = output / "candidate_confirmation_request.json"
+    planned = [output / "result.json", output / "result.json.tmp", output / "review.md",
+               request_path, request_path.with_suffix(".json.tmp")]
     ensure_no_collisions(planned, inputs)
     source_hashes = {str(p.absolute()): digest(p.read_bytes()) for p in inputs}
+    reference = read_reference(args.reference_times_json) if args.reference_times_json else None
+    confirmation = read_reference(args.candidate_confirmation_json) if args.candidate_confirmation_json else None
     units = read_script(args.script, args.episode)
     if args.dialogue_docx:
         groups = green_groups(args.dialogue_docx)
@@ -411,6 +605,14 @@ def main() -> None:
             continue
         anchors.append({**anchor, "script_text": row["text"], "estimated_start": row["estimated_start"],
             "estimated_end": row["estimated_end"], "issues": row["issues"], "boundary_status": "not_playback_verified"})
+    reference_comparison = evaluate_reference(dialogues, anchors, matched, reference,
+        source_hashes[str(args.audio.absolute())], [a["id"] for a in requested_anchors])
+    source_content_hashes = {label: source_hashes[str(path.absolute())] for label, path in
+        [("script", args.script), ("dialogue_docx", args.dialogue_docx), ("anchors", args.anchors_json)] if path}
+    candidate = make_candidate(source_hashes[str(args.audio.absolute())], digest(pcm),
+        len(pcm) / 32000, matched, dialogues, anchors, requested_anchors, warnings, source_content_hashes)
+    candidate_confirmation = evaluate_confirmation(candidate, confirmation)
+    adoption = reference_comparison if reference is not None else candidate_confirmation
     match_seconds = time.perf_counter() - match_started
     # Check resolved paths and hard links before opening any generated WAV.
     clip_outputs = [output / "review_clips" / (re.sub(r"[^a-zA-Z0-9_-]", "_", p["id"]) + ".wav")
@@ -428,15 +630,42 @@ def main() -> None:
         decoded_duration_seconds=len(pcm) / 32000, source_origin_seconds=0,
         decoder_version=decoder_version, script_sha256=digest(args.script.read_bytes()),
         matching=matched, dialogue_groups=dialogues, anchors=anchors, review_clips=clips,
-        warnings=warnings, timing=timing, automatic_pass=False,
-        validation="script_consistency_only; playback truth and +/-0.3s precision unverified")
+        warnings=warnings, timing=timing, automatic_pass=adoption["automatic_pass"],
+        adoption_status=adoption["adoption_status"], reference_comparison=reference_comparison,
+        candidate=candidate, candidate_content_sha256=transcript_sha(candidate),
+        candidate_confirmation=candidate_confirmation,
+        playback_verified=False, measured_boundary_error_seconds=None,
+        validation=("user_reference_tolerance_2s; playback_truth_unverified" if reference is not None
+                    else "candidate_confirmation; no_independent_timing_reference; playback_truth_unverified"))
     save(output / "result.json", result, inputs)
-    lines = ["# 本机音频定位复核", "", "所有区间是工具估计；原台词以剧本为准。边界未听检，不自动通过。", "",
-             f"原文件长度（解码）：{result['decoded_duration_seconds']:.4f} 秒。", "",
-             "| 标记 | 原文件估计区间／秒 | 疑点 |", "|---|---|---|"]
+    if reference is not None:
+        status = ("采用通过：全部用户参考边界差不超过2秒。尚未实际听检；参考差不等于实测误差。" if adoption["automatic_pass"]
+                  else "采用未通过：" + ", ".join(adoption["blockers"]) + "。尚未实际听检。")
+    elif adoption["automatic_pass"]:
+        status = "采用通过：用户已明确整体确认这份候选。无独立参考时码，不声称满足2秒参考差；听检未做。"
+    elif adoption["simulated_adoption_pass"]:
+        status = "测试演练：模拟整体确认条件通过，真实用户未采用，automatic_pass仍为false。无独立参考时码；听检未做。"
+    elif adoption["blockers"]:
+        status = "候选暂不能采用：" + ", ".join(adoption["blockers"]) + "。听检未做。"
+    else:
+        status = "候选尚未确认；没有用户明确回复，不自动采用。无独立参考时码；听检未做。"
+    lines = ["# 本机音频定位复核", "", status + "原台词以剧本为准。", "",
+             f"原文件长度（解码）：{result['decoded_duration_seconds']:.4f} 秒。", ""]
+    if reference is None:
+        lines.extend([f"一次候选确认摘要：{len(dialogues)}组对白、{len(anchors)}个剧本指定段首。以下原文、说话者、区间与少数疑点由Codex整理；用户可整体采用或指出局部问题，可随既有分段确认一起完成。无需填写JSON或整套时码。Codex只能依据真实明确回复保存确认；沉默不算确认。", "",
+            f"完整候选内容指纹：`{result['candidate_content_sha256']}`。", ""])
+        if args.candidate_confirmation_json is None:
+            save(request_path, dict(basis="user_explicit", confirmed=False,
+                audio_file_sha256=result["audio_file_sha256"],
+                candidate_content_sha256=result["candidate_content_sha256"], confirmation_note=""), inputs)
+    lines.extend(["| 标记 | 原文件估计区间／秒 | " + ("用户参考最大差／秒" if reference is not None else "采用状态") + " | 疑点 |",
+                  "|---|---|---|---|"])
+    comparisons = {p["id"]: p for p in adoption["comparison_points"]}
     for point in dialogues + anchors:
         interval = "未确定" if point["estimated_start"] is None else f"{point['estimated_start']:.2f}–{point['estimated_end']:.2f}"
-        lines.append(f"| {point['id']} | {interval} | {', '.join(point['issues']) or '待播放复核'} |")
+        comparison = comparisons.get(point["id"])
+        difference = (f"{comparison['maximum_absolute_difference_seconds']:.2f}" if comparison else "参考未提供或无效") if reference is not None else adoption["adoption_status"]
+        lines.append(f"| {point['id']} | {interval} | {difference} | {', '.join(point['issues']) or '听检未做'} |")
     lines.extend(["", "短段均保留原文件原点映射；用以下链接一次核对词首、词尾和对白归属。", ""])
     for clip in clips:
         lines.append(f"- [{clip['id']}]({clip['path']})：原文件 {clip['source_offset_seconds']:.2f}–{clip['source_end_seconds']:.2f} 秒。")
@@ -453,12 +682,17 @@ def main() -> None:
             lines.append(f"- {word['start']:.2f}–{word['end']:.2f} 秒：`{word['token']}`。")
     pending = [r for r in matched["units"] if r["issues"] and r.get("kind") == "dialogue"]
     if pending:
-        lines.extend(["", "需重点复核的对白句：", ""])
+        lines.extend(["", "可选精检提示：" if not adoption["blockers"] else "需处理的对白疑点：", ""])
         for row in pending:
             lines.append(f"- {row['id']}：{row['text']}；{', '.join(row['issues'])}。")
     (output / "review.md").write_text("\n".join(lines) + "\n")
     print(json.dumps(dict(result_path=str(output / "result.json"),
-        review_path=str(output / "review.md"), timing=timing, warnings=warnings), ensure_ascii=False, indent=2))
+        review_path=str(output / "review.md"), timing=timing, warnings=warnings,
+        automatic_pass=adoption["automatic_pass"], adoption_status=adoption["adoption_status"],
+        maximum_reference_difference_seconds=reference_comparison["maximum_absolute_difference_seconds"],
+        candidate_content_sha256=result["candidate_content_sha256"],
+        simulated_adoption_pass=candidate_confirmation["simulated_adoption_pass"],
+        confirmation_request_path=str(request_path) if reference is None and args.candidate_confirmation_json is None else None), ensure_ascii=False, indent=2))
 
 
 if __name__ == "__main__":

@@ -159,5 +159,210 @@ class MatchingTests(unittest.TestCase):
                 decoder.assert_not_called()
 
 
+class UserReferenceTests(unittest.TestCase):
+    def fixture(self, heard="Stay with me."):
+        units = [{"id": "u1", "text": '"Stay with me."', "kind": "dialogue", "speaker": "script_actor"}]
+        matched = localize.match_units(units, transcript(heard))
+        groups, _ = localize.add_groups(matched["units"], [['"Stay with me."']])
+        row = matched["units"][0]
+        anchors = [dict(id="anchor_A", unit_id="u1", estimated_start=row["estimated_start"], estimated_end=row["estimated_end"])]
+        reference = dict(basis="user_supplied", audio_file_sha256="a" * 64, tolerance_seconds=2,
+            dialogue_groups={"dialogue_01": {"start": 2.0, "end": 2.75}},
+            anchors={"anchor_A": {"start": 2.0}})
+        return groups, anchors, matched, reference
+
+    def evaluate(self, fixture):
+        groups, anchors, matched, reference = fixture
+        return localize.evaluate_reference(groups, anchors, matched, reference, "a" * 64, ["anchor_A"])
+
+    def test_exactly_two_seconds_passes_without_claiming_playback_truth(self):
+        result = self.evaluate(self.fixture())
+        self.assertTrue(result["automatic_pass"])
+        self.assertEqual(result["maximum_absolute_difference_seconds"], 2)
+        self.assertEqual(result["adoption_status"], "user_reference_passed")
+        self.assertFalse(result["playback_verified"])
+        self.assertIsNone(result["measured_boundary_error_seconds"])
+
+    def test_more_than_two_seconds_does_not_pass(self):
+        fixture = self.fixture()
+        fixture[3]["anchors"]["anchor_A"]["start"] = 2.01
+        result = self.evaluate(fixture)
+        self.assertFalse(result["automatic_pass"])
+        self.assertIn("anchor_A:reference_difference_exceeds_2_seconds", result["blockers"])
+
+    def test_missing_invalid_or_incomplete_references_do_not_pass(self):
+        for mutation in ["endpoint", "anchor", "nan", "tolerance"]:
+            with self.subTest(mutation=mutation):
+                fixture = self.fixture()
+                reference = fixture[3]
+                if mutation == "endpoint":
+                    del reference["dialogue_groups"]["dialogue_01"]["end"]
+                elif mutation == "anchor":
+                    reference["anchors"] = {}
+                elif mutation == "nan":
+                    reference["anchors"]["anchor_A"]["start"] = float("nan")
+                else:
+                    del reference["tolerance_seconds"]
+                self.assertFalse(self.evaluate(fixture)["automatic_pass"])
+        groups, anchors, matched, _ = self.fixture()
+        self.assertFalse(localize.evaluate_reference(groups, anchors, matched, None, "a" * 64)["automatic_pass"])
+
+    def test_reference_from_different_audio_does_not_pass(self):
+        fixture = self.fixture()
+        fixture[3]["audio_file_sha256"] = "b" * 64
+        result = self.evaluate(fixture)
+        self.assertFalse(result["automatic_pass"])
+        self.assertIn("reference_audio_fingerprint_mismatch", result["blockers"])
+
+    def test_reference_tolerance_cannot_mask_missing_words_or_ambiguous_repeat(self):
+        fixture = self.fixture("Stay with")
+        result = self.evaluate(fixture)
+        self.assertFalse(result["automatic_pass"])
+        self.assertIn("script_alignment_incomplete", result["blockers"])
+        fixture = self.fixture()
+        fixture[2]["units"][0]["issues"].append("ambiguous_repeat")
+        result = self.evaluate(fixture)
+        self.assertFalse(result["automatic_pass"])
+        self.assertIn("u1:ambiguous_repeat", result["blockers"])
+
+    def test_prefix_extra_warns_but_unmatched_body_content_blocks(self):
+        prefix = self.fixture("Title. Stay with me.")
+        row = prefix[2]["units"][0]
+        prefix[3]["dialogue_groups"]["dialogue_01"] = {"start": row["estimated_start"], "end": row["estimated_end"]}
+        prefix[3]["anchors"]["anchor_A"]["start"] = row["estimated_start"]
+        self.assertTrue(self.evaluate(prefix)["automatic_pass"])
+        body = self.fixture("Stay really with me.")
+        result = self.evaluate(body)
+        self.assertFalse(result["automatic_pass"])
+        self.assertIn("unmatched_asr_inside_script_body", result["blockers"])
+
+    def test_duplicate_reference_json_keys_are_rejected(self):
+        with tempfile.TemporaryDirectory(dir=TEST_TMP) as directory:
+            path = Path(directory) / "reference.json"
+            path.write_text('{"anchors": {}, "anchors": {}}')
+            with self.assertRaisesRegex(ValueError, "Duplicate reference key"):
+                localize.read_reference(path)
+
+
+class CandidateConfirmationTests(unittest.TestCase):
+    def fixture(self, heard="Stay with me."):
+        groups, anchors, matched, _ = UserReferenceTests().fixture(heard)
+        candidate = localize.make_candidate("a" * 64, "b" * 64, 2, matched, groups, anchors,
+            [{"id": "anchor_A", "unit_id": "u1"}], [], {"script": "c" * 64})
+        confirmation = dict(basis="user_explicit", confirmed=True,
+            audio_file_sha256="a" * 64, candidate_content_sha256=localize.transcript_sha(candidate),
+            confirmation_note="Synthetic test reply: adopt these candidates.")
+        return candidate, confirmation
+
+    def test_silence_and_template_do_not_adopt_or_claim_two_second_reference(self):
+        candidate, confirmation = self.fixture()
+        result = localize.evaluate_confirmation(candidate, None)
+        self.assertFalse(result["automatic_pass"])
+        self.assertEqual(result["adoption_status"], "candidate_pending_user_confirmation")
+        self.assertIsNone(result["maximum_absolute_difference_seconds"])
+        self.assertEqual(result["comparison_points"], [])
+        confirmation["confirmed"] = False
+        self.assertFalse(localize.evaluate_confirmation(candidate, confirmation)["automatic_pass"])
+
+    def test_user_confirmation_requires_nonblank_reply_record(self):
+        for note in [None, "", " \t\n", 42, False]:
+            with self.subTest(note=note):
+                candidate, confirmation = self.fixture()
+                if note is None:
+                    del confirmation["confirmation_note"]
+                else:
+                    confirmation["confirmation_note"] = note
+                result = localize.evaluate_confirmation(candidate, confirmation)
+                self.assertIn("confirmation_reply_missing", result["blockers"])
+                self.assertFalse(result["automatic_pass"])
+                self.assertFalse(result["user_confirmation_recorded"])
+                self.assertIsNone(result["confirmation_fact"])
+
+    def test_explicit_reply_records_fact_without_claiming_playback(self):
+        candidate, confirmation = self.fixture()
+        result = localize.evaluate_confirmation(candidate, confirmation)
+        self.assertTrue(result["automatic_pass"])
+        self.assertEqual(result["adoption_status"], "user_confirmed_candidates")
+        self.assertTrue(result["user_confirmation_recorded"])
+        self.assertEqual(result["confirmation_fact"]["confirmation_note"], confirmation["confirmation_note"])
+        self.assertIn("recorded_at_utc", result["confirmation_fact"])
+        self.assertFalse(result["playback_verified"])
+        self.assertIsNone(result["measured_boundary_error_seconds"])
+        self.assertIsNone(result["maximum_absolute_difference_seconds"])
+
+    def test_simulation_cannot_become_real_user_adoption(self):
+        candidate, confirmation = self.fixture()
+        confirmation["basis"] = "test_simulation"
+        result = localize.evaluate_confirmation(candidate, confirmation)
+        self.assertFalse(result["automatic_pass"])
+        self.assertFalse(result["user_confirmation_recorded"])
+        self.assertTrue(result["simulated_adoption_pass"])
+        self.assertEqual(result["adoption_status"], "candidate_confirmation_simulated")
+        self.assertEqual(result["confirmation_fact"]["basis"], "test_simulation")
+
+    def test_wrong_audio_missing_hash_and_nonaffirmative_reply_are_rejected(self):
+        for mutation in ["audio", "candidate", "missing_hash", "string_true", "basis"]:
+            with self.subTest(mutation=mutation):
+                candidate, confirmation = self.fixture()
+                if mutation == "audio":
+                    confirmation["audio_file_sha256"] = "d" * 64
+                elif mutation == "candidate":
+                    confirmation["candidate_content_sha256"] = "d" * 64
+                elif mutation == "missing_hash":
+                    del confirmation["candidate_content_sha256"]
+                elif mutation == "string_true":
+                    confirmation["confirmed"] = "true"
+                else:
+                    confirmation["basis"] = "silence"
+                result = localize.evaluate_confirmation(candidate, confirmation)
+                self.assertFalse(result["automatic_pass"])
+                self.assertFalse(result["user_confirmation_recorded"])
+
+    def test_confirmation_expires_when_any_candidate_content_changes(self):
+        for section, field, value in [("matching", "text", '"Stay near me."'),
+                ("matching", "speaker", "different_script_actor"),
+                ("matching", "estimated_end", 1),
+                ("dialogue_groups", "script_text", ['"Stay near me."']),
+                ("anchors", "unit_id", "another_unit")]:
+            with self.subTest(section=section, field=field):
+                candidate, confirmation = self.fixture()
+                row = candidate[section]["units"][0] if section == "matching" else candidate[section][0]
+                row[field] = value
+                result = localize.evaluate_confirmation(candidate, confirmation)
+                self.assertFalse(result["automatic_pass"])
+                self.assertIn("confirmation_candidate_fingerprint_mismatch", result["blockers"])
+
+    def test_reply_cannot_hide_missing_text_unknown_speaker_or_missing_anchor(self):
+        for mutation in ["missing_text", "speaker", "anchor", "repeat"]:
+            with self.subTest(mutation=mutation):
+                candidate, confirmation = self.fixture("Stay with" if mutation == "missing_text" else "Stay with me.")
+                if mutation == "speaker":
+                    candidate["matching"]["units"][0]["speaker"] = None
+                elif mutation == "anchor":
+                    candidate["anchors"] = []
+                elif mutation == "repeat":
+                    candidate["matching"]["units"][0]["issues"].append("ambiguous_repeat")
+                confirmation["candidate_content_sha256"] = localize.transcript_sha(candidate)
+                self.assertFalse(localize.evaluate_confirmation(candidate, confirmation)["automatic_pass"])
+
+    def test_candidate_is_stable_and_independent_of_runtime_or_later_mutation(self):
+        candidate, _ = self.fixture()
+        groups, anchors, matched, _ = UserReferenceTests().fixture()
+        copied = localize.make_candidate("a" * 64, "b" * 64, 2, matched, groups, anchors,
+            [{"id": "anchor_A", "unit_id": "u1"}], [], {"script": "c" * 64})
+        before = localize.transcript_sha(copied)
+        matched["units"][0]["text"] = "changed after candidate snapshot"
+        self.assertEqual(localize.transcript_sha(copied), before)
+        self.assertEqual(before, localize.transcript_sha(candidate))
+
+    def test_reference_and_confirmation_cannot_be_combined_before_decode(self):
+        argv = ["localize.py", "--audio", "audio.wav", "--script", "script.json",
+                "--reference-times-json", "reference.json", "--candidate-confirmation-json", "reply.json"]
+        with patch.object(sys, "argv", argv), patch.object(localize, "decode") as decoder:
+            with self.assertRaisesRegex(ValueError, "not both"):
+                localize.main()
+            decoder.assert_not_called()
+
+
 if __name__ == "__main__":
     unittest.main()
