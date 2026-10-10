@@ -4,7 +4,7 @@
 
 | 文件 | 唯一维护职责与入口 |
 |---|---|
-| [director_os.md](director_os.md#script-design) | 六步阶段交接、主动导演权限、解读完成标准、功能场景与分段时间表 |
+| [director_os.md](director_os.md#script-design) | 六步交接、三步导演判断、权限、解读标准、功能场景与分段 |
 | [execution_rules.md](execution_rules.md#sound-and-time) | 素材、空间、动作表演、原音轨／绿标对白替换、授权加时与三时轴、镜数与摄影执行 |
 | [continuity_and_review.md](continuity_and_review.md) | 原生／延长选择、当前制作约束、实际源片、跨段状态与依赖、审片证据及精准返修 |
 | [prompt_template.md](prompt_template.md) | 现有制作设置、角色映射、正文骨架与信息归属、一次成稿检查；具体方法链接到对应规则 |
@@ -20,3 +20,5 @@
 拆解／分段读导演流程，正式提示词读采用设计、素材与模板，局部返修读用户反馈、可用基线及受影响接缝；遇到具体疑难才加读执行或方法章节。同一要求只在上表职责文件完整维护，其他文件保留短提示与链接。
 
 反馈先修本项目，项目偏好留项目；可推广经验才更新唯一核心位置，用户明确新决定立即按范围执行，详见[反馈维护](continuity_and_review.md#feedback-maintenance)。单次观察、外部方法、官方宣称与平台／用户约束分别标明。旧2.0社区资料、团队SOP与项目历史不自动参与新任务。
+
+可选[本机音频定位工具](../../tools/local_audio/README.md)独立验证，不参与每轮导演思考；当前词边界待播放复核，人工定位仍有效。

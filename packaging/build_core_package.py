@@ -22,6 +22,7 @@ RELEASES_DIR = REPO_ROOT / "releases"
 
 CORE_FILES = [
     "AGENTS.md",
+    "NEW_PROJECT_CONVERSATION_PROMPT.md",
     "ROADMAP.md",
     "memories/seedance_workflow/README.md",
     "memories/seedance_workflow/director_os.md",
@@ -36,6 +37,13 @@ CORE_FILES = [
     "memories/seedance_workflow/live_action_dialogue_drama.md",
     "memories/seedance_workflow/field_lessons.md",
     "memories/seedance_workflow/projects/PROJECT_TEMPLATE.md",
+    "tools/local_audio/localize.py",
+    "tools/local_audio/test_localize.py",
+    "tools/local_audio/requirements.txt",
+    "tools/local_audio/requirements-lock-macos-arm64-py312.txt",
+    "tools/local_audio/README.md",
+    "tools/local_audio/validation_report.md",
+    "validation/director_v3.md",
 ]
 
 ABSOLUTE_PATH_RE = re.compile(r"/(?:Users|var/folders)/")
@@ -77,7 +85,7 @@ def package_info(config: dict[str, str]) -> str:
 - 版本：`{config['version']}`
 - 发布日期：`{config['release_date']}`
 - 更新策略：仅在用户明确要求时手动更新
-- 内容：现行Seedance提示词规则、模板、技术摘要、匿名经验与空白项目结构
+- 内容：现行Seedance提示词规则、模板、技术摘要、匿名经验、空白项目结构与可选本机音频工具
 - 排除：所有历史项目、项目纪念目录、资产、审片、旧提示词、旧2.0 Skill与团队SOP
 
 ## 本版摘要

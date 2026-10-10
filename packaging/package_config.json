@@ -1,7 +1,7 @@
 {
   "package_name": "Seedance_Codex_Workflow_Core",
-  "version": "1.0.0",
-  "release_date": "2026-09-20",
+  "version": "1.1.0",
+  "release_date": "2026-10-10",
   "update_policy": "manual_only_when_user_requests",
-  "summary": "首次干净核心学习包：统一用户优先级、情绪与快切、连续性、一次延长、俯视站位图、最小充分提示词和项目状态规则。"
+  "summary": "包含V1/V2归并及导演V3：三步观看判断、一次成稿核对、镜数诊断、强情绪与精准返修保留；附可选本机音频定位工具，首轮词边界待播放复核，人工定位仍有效。"
 }

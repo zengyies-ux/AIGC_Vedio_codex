@@ -1,6 +1,6 @@
 # Seedance Codex Workflow Core
 
-这是一份供Codex学习和执行Seedance海外短剧提示词工作流的干净核心包，不包含任何历史项目、剧本、角色资产、成片、审片记录或旧提示词。
+这是一份供Codex学习和执行Seedance海外短剧提示词工作流的干净核心包，不包含任何历史项目、剧本、角色资产、成片、审片记录或旧提示词。1.1.0含现行导演V3核心及独立的可选音频定位脚本。
 
 ## 使用方式
 
@@ -27,12 +27,16 @@ memories/seedance_workflow/
 ├── prompt_template.md
 ├── continuity_and_review.md
 ├── director_patterns.md
+├── animal_city_motion.md
+├── visual_language_learning_notes.md
 ├── live_action_dialogue_drama.md
 ├── field_lessons.md
 └── projects/
     ├── INDEX.md
     └── PROJECT_TEMPLATE.md
 ```
+
+可选工具位于`tools/local_audio/`，状态与实测限制见`validation/director_v3.md`。无需运行音频工具即可使用导演核心；词边界尚待播放复核，原有人工时码继续有效。完整MP3／WAV可与剧本、资产一起提供，个人想法可选；分阶段审核继续保留。
 
 ## 明确排除
 
