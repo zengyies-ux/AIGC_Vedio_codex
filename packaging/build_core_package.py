@@ -45,6 +45,10 @@ CORE_FILES = [
     "tools/local_audio/validation_report.md",
     "validation/director_v3.md",
     "validation/director_v32.md",
+    "validation/director_v33.md",
+    "tools/prompt_review/check_prompt.py",
+    "tools/prompt_review/test_check_prompt.py",
+    "tools/prompt_review/README.md",
 ]
 
 ABSOLUTE_PATH_RE = re.compile(r"/(?:Users|var/folders)/")

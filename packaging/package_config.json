@@ -1,8 +1,8 @@
 {
   "package_name": "Seedance_Codex_Workflow_Core",
-  "version": "1.2.0",
+  "version": "1.3.0",
   "release_date": "2026-10-14",
   "update_policy": "manual_only_when_user_requests",
-  "summary": "V3.2试制版：完整剧本、目标集音轨与真实资产为默认输入，连续完成定位、解读和分段，验证模式一次整体审核；受控常规内部采用已实现，默认启用仍等用户认可落盘。原轨预算优先、必要资产分级、独立重测保护旧稿，规则/工具验收与实片验证分开；网页未接入。",
-  "release_status": "prerelease"
+  "summary": "V3.3本地候选：声音窗口与真实镜头边界分离，行动回应、紧特写和背景生活感落画；结构检查不替代导演验收。继承V3.2输入与音频流程，尚未验证新实片，网页未接入，远端未发布。",
+  "release_status": "local_candidate"
 }
