@@ -1,7 +1,8 @@
 {
   "package_name": "Seedance_Codex_Workflow_Core",
-  "version": "1.1.2",
-  "release_date": "2026-10-10",
+  "version": "1.2.0",
+  "release_date": "2026-10-14",
   "update_policy": "manual_only_when_user_requests",
-  "summary": "V3.1稳定化：解读有效互动落入首稿、项目节奏与返修力度、统一声音短格式和镜内开口、一次简短台词／时序／镜长核对。音频复用现有结果并内部局部处理，不增用户表格；实现与文本检查完成，实际生成改善待下一次正常制作验证。"
+  "summary": "V3.2试制版：完整剧本、目标集音轨与真实资产为默认输入，连续完成定位、解读和分段，验证模式一次整体审核；受控常规内部采用已实现，默认启用仍等用户认可落盘。原轨预算优先、必要资产分级、独立重测保护旧稿，规则/工具验收与实片验证分开；网页未接入。",
+  "release_status": "prerelease"
 }

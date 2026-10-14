@@ -4,9 +4,9 @@
 
 | 文件 | 唯一维护职责与入口 |
 |---|---|
-| [director_os.md](director_os.md#script-design) | 六步交接、三步导演判断、权限、解读标准、功能场景与分段 |
-| [execution_rules.md](execution_rules.md#sound-and-time) | 素材、空间、动作表演、原音轨／绿标对白替换、授权加时与三时轴、镜数与摄影执行 |
-| [continuity_and_review.md](continuity_and_review.md) | 原生／延长选择、当前制作约束、实际源片、跨段状态与依赖、审片证据及精准返修 |
+| [director_os.md](director_os.md#script-design) | 连续前置设计与集中采用、三步导演判断、权限、解读标准、功能场景与分段 |
+| [execution_rules.md](execution_rules.md#sound-and-time) | 必要素材分级、空间、动作表演、原音轨定位／采用、总预算与三时轴、镜数与摄影执行 |
+| [continuity_and_review.md](continuity_and_review.md) | 继续／返修／独立重测、原生／延长选择、当前制作约束、实际源片与依赖、审片及精准返修 |
 | [prompt_template.md](prompt_template.md) | 现有制作设置、角色映射、正文骨架与信息归属、一次成稿检查；具体方法链接到对应规则 |
 | [model_behavior.md](model_behavior.md) | 模型理解及有证据范围的观察、版本边界；不把用户选择解释成模型机制 |
 | [seedance_2_5_technical_notes.md](seedance_2_5_technical_notes.md) | 官方资料摘要、核对日期与当次平台适用边界；当前制作规则链接到维护处 |
@@ -17,8 +17,10 @@
 | [live_action_dialogue_drama.md](live_action_dialogue_drama.md) | 待真实项目建设的对白剧入口，避免误套旁白短剧节奏 |
 | [projects/INDEX.md](projects/INDEX.md) | 项目定位；当前事实进状态页，固定设定进概览，素材与采用关系各进对应索引 |
 
-拆解／分段读导演流程，正式提示词读采用设计、素材与模板，局部返修读用户反馈、可用基线及受影响接缝；遇到具体疑难才加读执行或方法章节。同一要求只在上表职责文件完整维护，其他文件保留短提示与链接。
+默认完整剧本＋目标集完整音频＋已有资产＋可选想法，GPT连续完成提取、定位、核看、导演设计与分段。本轮验证模式只集中审核一次，确认同时记录音频位置采用；用户实际认可流程与效果后才按落盘的常规模式内部核查采用、直接交正式提示词。旧Word／高亮／人工时码可兼容，不是新项目必填。
+
+解读／分段读导演流程，正式提示词读采用设计、素材与模板，局部返修读用户反馈、可用基线及受影响接缝；遇到具体疑难才加读执行或方法章节。同一要求只在上表职责文件完整维护，其他文件保留短提示与链接。
 
 反馈先修本项目，项目偏好留项目；可推广经验才更新唯一核心位置，用户明确新决定立即按范围执行，详见[反馈维护](continuity_and_review.md#feedback-maintenance)。单次观察、外部方法、官方宣称与平台／用户约束分别标明。旧2.0社区资料、团队SOP与项目历史不自动参与新任务。
 
-可选[本机音频定位工具](../../tools/local_audio/README.md)独立验证，不参与每轮导演思考；当前词边界待播放复核，人工定位仍有效。
+[本机音频定位工具](../../tools/local_audio/README.md)服务目标集的实际定位与同音频缓存复用；归属由剧本语境核定。候选、内部核查、采用来源和实际听检分开；未实际播放不声称听检或精度通过，旧人工参考路径仍可兼容。当前能力与待实片验证边界见[路线图](../../ROADMAP.md)。

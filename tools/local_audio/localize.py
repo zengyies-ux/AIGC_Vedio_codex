@@ -22,6 +22,9 @@ REVISION = "52a88bf6e98b114a210c21bb83e22d6e1505cb73"
 PARAMS = dict(language="en", task="transcribe", word_timestamps=True,
               temperature=0.0, condition_on_previous_text=True, verbose=None)
 VERSION = "2"
+MATCHING_NORMALIZATION = "limited_spelling_v1"
+# User-confirmed spelling equivalence only; no fuzzy edits, names or numbers.
+SPELLING_EQUIVALENTS = {"cancelled": "canceled"}
 NS = {"w": "http://schemas.openxmlformats.org/wordprocessingml/2006/main"}
 
 
@@ -30,6 +33,10 @@ def digest(data: bytes) -> str:
 
 
 def tokens(text: str) -> list[str]:
+    return [SPELLING_EQUIVALENTS.get(word, word) for word in raw_tokens(text)]
+
+
+def raw_tokens(text: str) -> list[str]:
     return re.findall(r"[a-z]+(?:'[a-z]+)?|\d+(?:\.\d+)?", text.lower().replace("’", "'"))
 
 
@@ -169,15 +176,17 @@ def align(expected: list[str], heard: list[str]) -> tuple[dict[int, int], list[i
 
 
 def match_units(units: list[dict], transcript: dict) -> dict:
-    heard, word_times = [], []
+    heard, heard_original, word_times = [], [], []
     for segment in transcript["segments"]:
         for word in segment.get("words", []):
-            for token in tokens(word["word"]):
-                heard.append(token)
+            for token in raw_tokens(word["word"]):
+                heard_original.append(token)
+                heard.append(SPELLING_EQUIVALENTS.get(token, token))
                 word_times.append(word)
-    expected, spans = [], []
+    expected, expected_original, spans = [], [], []
     for unit in units:
         words = tokens(unit["text"])
+        expected_original.extend(raw_tokens(unit["text"]))
         spans.append((len(expected), len(expected) + len(words)))
         expected.extend(words)
     mapping, unused = align(expected, heard)
@@ -199,8 +208,13 @@ def match_units(units: list[dict], transcript: dict) -> dict:
             issues.append("short_phrase_requires_context_review")
         if found and any(word_times[mapping[i]].get("probability", 1) < 0.5 for i in found):
             issues.append("low_word_probability")
+        equivalences = [dict(script_token=expected_original[i], asr_token=heard_original[mapping[i]],
+            canonical_token=expected[i], script_token_index=i - begin, asr_token_index=mapping[i],
+            source="user_confirmed_cancelled_canceled_spelling") for i in found
+            if expected_original[i] != heard_original[mapping[i]]]
         rows.append({**unit, "estimated_start": start, "estimated_end": finish,
                      "exact_tokens": len(found), "script_tokens": end - begin,
+                     "spelling_equivalences": equivalences,
                      "missing_tokens": missing, "issues": issues,
                      "boundary_status": "not_playback_verified"})
     repeated = {}
@@ -215,6 +229,8 @@ def match_units(units: list[dict], transcript: dict) -> dict:
                 row["issues"].append("ambiguous_repeat")
                 row["boundary_status"] = "ambiguous_repeat_not_playback_verified"
     return dict(units=rows, exact_tokens=len(mapping), script_tokens=len(expected),
+                matching_normalization=MATCHING_NORMALIZATION,
+                equivalent_tokens=sum(len(r["spelling_equivalences"]) for r in rows),
                 asr_tokens=len(heard), unused_asr_tokens=[dict(token=heard[i],
                 start=word_times[i]["start"], end=word_times[i]["end"]) for i in unused])
 
@@ -335,6 +351,39 @@ def add_groups(rows: list[dict], groups: list[list[str]]) -> tuple[list[dict], l
     return output, warnings
 
 
+def script_dialogue_groups(rows: list[dict]) -> list[dict]:
+    """Use GPT-supplied units/roles, with optional explicit group labels.
+
+    Unit ids preserve identical complete replies. Quotes never infer a role.
+    Without a label, consecutive dialogue is one group, split by narration.
+    """
+    batches, current, previous_label = [], [], None
+    for row in rows:
+        label = row.get("dialogue_group")
+        if row.get("kind") != "dialogue":
+            if current:
+                batches.append(current)
+            current, previous_label = [], None
+            continue
+        if current and label != previous_label:
+            batches.append(current)
+            current = []
+        current.append(row)
+        previous_label = label
+    if current:
+        batches.append(current)
+    output = []
+    for number, batch in enumerate(batches, 1):
+        starts = [r["estimated_start"] for r in batch if r["estimated_start"] is not None]
+        ends = [r["estimated_end"] for r in batch if r["estimated_end"] is not None]
+        output.append(dict(id=f"dialogue_{number:02}", unit_ids=[r["id"] for r in batch],
+            script_text=[r["text"] for r in batch], source_count=len(batch), matched_count=len(batch),
+            estimated_start=min(starts) if starts else None, estimated_end=max(ends) if ends else None,
+            issues=sorted({issue for r in batch for issue in r["issues"]}),
+            boundary_status="not_playback_verified"))
+    return output
+
+
 def read_reference(path: Path) -> dict:
     def unique_keys(pairs):
         result = {}
@@ -364,7 +413,7 @@ def alignment_blockers(dialogues: list[dict], anchors: list[dict], matched: dict
     for row in rows:
         for issue in hard_issues.intersection(row.get("issues", [])):
             blockers.append(f"{row['id']}:{issue}")
-        if row.get("kind") == "dialogue" and not row.get("speaker"):
+        if row.get("kind") == "dialogue" and not known_role(row.get("speaker")):
             blockers.append(f"{row['id']}:script_speaker_not_provided")
     if any(r.get("kind") == "dialogue" for r in rows) and not dialogues:
         blockers.append("dialogue_groups_not_provided")
@@ -462,7 +511,7 @@ def make_candidate(audio_sha: str, pcm_sha: str, duration: float, matched: dict,
                    dialogues: list[dict], anchors: list[dict], requested_anchors: list[dict],
                    warnings: list[str], source_content_hashes: dict) -> dict:
     """Stable complete candidate identity, without paths, runtime or reply data."""
-    value = dict(candidate_schema="1", audio_file_sha256=audio_sha, decoded_pcm_sha256=pcm_sha,
+    value = dict(candidate_schema="2", audio_file_sha256=audio_sha, decoded_pcm_sha256=pcm_sha,
                 decoded_duration_seconds=duration, source_origin_seconds=0,
                 source_content_hashes=source_content_hashes, matching=matched,
                 dialogue_groups=dialogues, anchors=anchors, requested_anchors=requested_anchors,
@@ -470,15 +519,63 @@ def make_candidate(audio_sha: str, pcm_sha: str, duration: float, matched: dict,
     return json.loads(json.dumps(value, ensure_ascii=False, allow_nan=False))
 
 
+def audio_content_identity(candidate: dict) -> str:
+    """Audio, authoritative text/roles and matched evidence; excludes derived cuts."""
+    fields = ["audio_file_sha256", "decoded_pcm_sha256", "decoded_duration_seconds",
+              "source_origin_seconds", "matching", "dialogue_groups"]
+    value = {key: candidate[key] for key in fields}
+    value["identity_schema"] = "2"
+    value["source_content_hashes"] = {key: sha for key, sha in candidate["source_content_hashes"].items()
+                                      if key != "anchors"}
+    return transcript_sha(value)
+
+
+def derived_anchors_identity(candidate: dict) -> str:
+    return transcript_sha(dict(anchors=candidate["anchors"], requested_anchors=candidate["requested_anchors"]))
+
+
+def known_role(value) -> bool:
+    return isinstance(value, str) and bool(value.strip()) and value.strip().lower() not in {
+        "unknown", "unspecified", "tbd", "none", "null", "?", "unknown speaker", "unknown listener",
+        "未知", "未确认", "待确认", "待定", "不明", "未提供", "未核定", "未确定"}
+
+
+def candidate_blockers(candidate: dict) -> list[str]:
+    blockers = alignment_blockers(candidate["dialogue_groups"], candidate["anchors"],
+        candidate["matching"], [p["id"] for p in candidate["requested_anchors"]])
+    rows = candidate["matching"]["units"]
+    by_id = {row["id"]: row for row in rows}
+    duration = candidate["decoded_duration_seconds"]
+    for row in rows:
+        if row.get("kind") not in ("narration", "dialogue"):
+            blockers.append(f"{row['id']}:script_kind_not_provided")
+        if row.get("kind") == "dialogue":
+            if not known_role(row.get("speaker")):
+                blockers.append(f"{row['id']}:script_speaker_not_provided")
+            listeners = row.get("listeners", row.get("listener"))
+            if not (known_role(listeners) or isinstance(listeners, list) and listeners and all(known_role(v) for v in listeners)):
+                blockers.append(f"{row['id']}:script_listener_not_provided")
+        begin, end = row.get("estimated_start"), row.get("estimated_end")
+        if not valid_number(begin) or not valid_number(end) or end <= begin or end > duration:
+            blockers.append(f"{row['id']}:candidate_boundary_invalid")
+    if not rows:
+        blockers.append("no_sentence_candidates")
+    for anchor in candidate["anchors"]:
+        row = by_id.get(anchor.get("unit_id"))
+        if row is None or any(anchor.get(field) != row.get(field) for field in ("estimated_start", "estimated_end")):
+            blockers.append(f"{anchor['id']}:derived_anchor_mapping_invalid")
+    return list(dict.fromkeys(blockers))
+
+
 def evaluate_confirmation(candidate: dict, confirmation: dict | None) -> dict:
     """Record explicit consent to these candidates, never invent a timing reference."""
     candidate_sha = transcript_sha(candidate)
-    blockers = alignment_blockers(candidate["dialogue_groups"], candidate["anchors"],
-        candidate["matching"], [p["id"] for p in candidate["requested_anchors"]])
-    if not candidate["dialogue_groups"] and not candidate["anchors"]:
-        blockers.append("no_candidate_points_to_confirm")
+    blockers = candidate_blockers(candidate)
     outcome = dict(automatic_pass=False, adoption_status="candidate_pending_user_confirmation",
         candidate_content_sha256=candidate_sha, blockers=blockers, confirmation_fact=None,
+        audio_content_identity_sha256=audio_content_identity(candidate),
+        derived_anchors_sha256=derived_anchors_identity(candidate),
+        adoption_source=None, scheme_approval=dict(approved=False, source=None),
         user_confirmation_recorded=False, simulated_adoption_pass=False,
         playback_verified=False, measured_boundary_error_seconds=None,
         maximum_absolute_difference_seconds=None, comparison_points=[])
@@ -492,7 +589,11 @@ def evaluate_confirmation(candidate: dict, confirmation: dict | None) -> dict:
         return outcome
     if confirmation.get("audio_file_sha256") != candidate["audio_file_sha256"]:
         blockers.append("confirmation_audio_fingerprint_mismatch")
-    if confirmation.get("candidate_content_sha256") != candidate_sha:
+    if "audio_content_identity_sha256" in confirmation:
+        if confirmation.get("audio_content_identity_sha256") != audio_content_identity(candidate):
+            blockers.append("confirmation_audio_content_identity_mismatch")
+    elif confirmation.get("candidate_content_sha256") != candidate_sha:
+        # Old full-candidate records remain strict, including their old anchors.
         blockers.append("confirmation_candidate_fingerprint_mismatch")
     if confirmation.get("confirmed") is not True:
         blockers.append("explicit_candidate_confirmation_required")
@@ -516,6 +617,113 @@ def evaluate_confirmation(candidate: dict, confirmation: dict | None) -> dict:
         else:
             outcome["automatic_pass"] = True
             outcome["adoption_status"] = "user_confirmed_candidates"
+            outcome["adoption_source"] = "user_overall_confirmation"
+            current_scheme = (confirmation.get("derived_anchors_sha256") == derived_anchors_identity(candidate)
+                              if "audio_content_identity_sha256" in confirmation else True)
+            outcome["scheme_approval"] = dict(approved=current_scheme, source="user_overall_confirmation",
+                scope="original_overall_reply", covers_current_derived_anchors=current_scheme,
+                confirmed_derived_anchors_sha256=confirmation.get("derived_anchors_sha256"),
+                confirmation_note=note)
+    return outcome
+
+
+def evaluate_internal_review(candidate: dict, review: dict | None) -> dict:
+    """Accept a recorded content/role/boundary check, never merely a bypass flag."""
+    blockers = candidate_blockers(candidate)
+    outcome = dict(checked=False, blockers=blockers, review_fact=None, simulated=False,
+        audio_content_identity_sha256=audio_content_identity(candidate),
+        derived_anchors_sha256=derived_anchors_identity(candidate))
+    if not isinstance(review, dict):
+        blockers.append("gpt_internal_review_required")
+        return outcome
+    if review.get("basis") not in ("gpt_internal_review", "test_simulation"):
+        blockers.append("internal_review_basis_invalid")
+    if review.get("checked") is not True:
+        blockers.append("internal_review_not_completed")
+    for field, expected in [("audio_file_sha256", candidate["audio_file_sha256"]),
+            ("audio_content_identity_sha256", audio_content_identity(candidate)),
+            ("derived_anchors_sha256", derived_anchors_identity(candidate))]:
+        if review.get(field) != expected:
+            blockers.append("internal_review_" + field + "_mismatch")
+    for field in ("project_scope", "review_source", "review_note"):
+        if not isinstance(review.get(field), str) or not review[field].strip():
+            blockers.append("internal_review_" + field + "_missing")
+    checks = review.get("checks")
+    if not isinstance(checks, dict) or any(checks.get(field) is not True for field in
+            ("content_complete", "roles_verified", "boundaries_verified")):
+        blockers.append("internal_review_checks_incomplete")
+    if review.get("reviewed_unit_ids") != [row["id"] for row in candidate["matching"]["units"]]:
+        blockers.append("internal_review_unit_coverage_incomplete")
+    if review.get("unresolved_blockers") != []:
+        blockers.append("internal_review_unresolved_blockers")
+    outcome["blockers"] = list(dict.fromkeys(blockers))
+    if not blockers:
+        outcome["checked"] = True
+        outcome["simulated"] = review["basis"] == "test_simulation"
+        outcome["review_fact"] = {**review, "recorded_at_utc": datetime.now(timezone.utc).isoformat()}
+    return outcome
+
+
+def evaluate_adoption(candidate: dict, confirmation: dict | None = None,
+                      internal_review: dict | None = None, mode_record: dict | None = None) -> dict:
+    """Default one-review verification; routine requires persisted user authority.
+
+    Both paths consume current alignment and a bound internal review. A new
+    derived anchor needs a new internal check, not another unchanged-audio reply.
+    """
+    outcome = evaluate_confirmation(candidate, confirmation)
+    review = evaluate_internal_review(candidate, internal_review)
+    outcome["internal_review"] = review
+    mode = mode_record.get("mode") if isinstance(mode_record, dict) else "verification"
+    outcome["production_mode"] = mode
+    if mode not in ("verification", "routine") or mode_record is not None and not isinstance(mode_record, dict):
+        outcome["blockers"].append("production_mode_invalid")
+        outcome["automatic_pass"] = False
+        outcome["adoption_status"] = "production_mode_not_passed"
+        return outcome
+    if mode == "verification":
+        outcome["blockers"] = list(dict.fromkeys(outcome["blockers"] + review["blockers"]))
+        if not review["checked"]:
+            outcome["automatic_pass"] = False
+            outcome["simulated_adoption_pass"] = False
+            outcome["adoption_source"] = None
+            if not candidate_blockers(candidate):
+                outcome["adoption_status"] = "candidate_pending_internal_review"
+        elif review["simulated"]:
+            outcome["simulated_adoption_pass"] = outcome["automatic_pass"] or outcome["simulated_adoption_pass"]
+            outcome["automatic_pass"] = False
+            outcome["adoption_source"] = None
+            outcome["scheme_approval"] = dict(approved=False, source=None)
+            outcome["user_confirmation_recorded"] = False
+            outcome["confirmation_fact"] = None
+            outcome["adoption_status"] = "candidate_confirmation_simulated"
+        return outcome
+    blockers = list(review["blockers"])
+    if mode_record.get("basis") not in ("user_explicit", "test_simulation"):
+        blockers.append("routine_authorization_basis_invalid")
+    if mode_record.get("authorized") is not True:
+        blockers.append("routine_authorization_required")
+    for field in ("project_scope", "authorization_source", "authorization_note"):
+        if not isinstance(mode_record.get(field), str) or not mode_record[field].strip():
+            blockers.append("routine_" + field + "_missing")
+    if isinstance(internal_review, dict) and mode_record.get("project_scope") != internal_review.get("project_scope"):
+        blockers.append("routine_authorization_scope_mismatch")
+    # Routine does not turn an optional audio reply into scheme approval.
+    outcome.update(automatic_pass=False, simulated_adoption_pass=False,
+        user_confirmation_recorded=False, confirmation_fact=None, adoption_source=None,
+        scheme_approval=dict(approved=False, source=None), blockers=list(dict.fromkeys(blockers)),
+        adoption_status="internal_adoption_not_passed", routine_authorization_fact=None)
+    if not blockers:
+        simulated = mode_record["basis"] == "test_simulation" or review["simulated"] or (
+            isinstance(confirmation, dict) and confirmation.get("basis") == "test_simulation")
+        if simulated:
+            outcome["simulated_adoption_pass"] = True
+            outcome["adoption_status"] = "internal_adoption_simulated"
+        else:
+            outcome["automatic_pass"] = True
+            outcome["adoption_status"] = "internally_adopted_candidates"
+            outcome["adoption_source"] = "gpt_internal_review"
+            outcome["routine_authorization_fact"] = mode_record
     return outcome
 
 
@@ -550,32 +758,36 @@ def main() -> None:
     parser.add_argument("--anchors-json", type=Path, help="list of {id, unit_id}; historical_seconds is comparison only")
     parser.add_argument("--reference-times-json", type=Path, help="explicit user reference boundaries and audio SHA; adoption tolerance 2 seconds")
     parser.add_argument("--candidate-confirmation-json", type=Path, help="explicit reply tied to the audio and complete candidate hashes; not a timing reference")
+    parser.add_argument("--internal-review-json", type=Path, help="GPT content/role/boundary check bound to audio identity and current derived anchors")
+    parser.add_argument("--production-mode-json", type=Path, help="persisted verification mode, or user-authorized routine mode; absent means verification")
     parser.add_argument("--cache", type=Path, default=Path(".codex_tmp/audio_v3"))
     parser.add_argument("--out", type=Path, default=Path(".codex_tmp/audio_v3/result"))
     parser.add_argument("--force-transcribe", action="store_true", help="performance benchmark only; bypass transcript cache")
     args = parser.parse_args()
-    if args.reference_times_json and args.candidate_confirmation_json:
-        raise ValueError("Choose user reference comparison or candidate confirmation, not both")
+    if args.reference_times_json and (args.candidate_confirmation_json or args.internal_review_json or args.production_mode_json):
+        raise ValueError("Choose legacy user reference comparison or candidate adoption, not both")
     started = time.perf_counter()
     cache, output = args.cache.absolute(), args.out.absolute()
     inputs = [p for p in [args.audio, args.script, args.dialogue_docx, args.anchors_json,
-                          args.reference_times_json, args.candidate_confirmation_json] if p is not None]
+                          args.reference_times_json, args.candidate_confirmation_json,
+                          args.internal_review_json, args.production_mode_json] if p is not None]
     request_path = output / "candidate_confirmation_request.json"
+    internal_request = output / "internal_review_request.json"
     planned = [output / "result.json", output / "result.json.tmp", output / "review.md",
-               request_path, request_path.with_suffix(".json.tmp")]
+               request_path, request_path.with_suffix(".json.tmp"), internal_request,
+               internal_request.with_suffix(".json.tmp")]
     ensure_no_collisions(planned, inputs)
     source_hashes = {str(p.absolute()): digest(p.read_bytes()) for p in inputs}
     reference = read_reference(args.reference_times_json) if args.reference_times_json else None
     confirmation = read_reference(args.candidate_confirmation_json) if args.candidate_confirmation_json else None
+    internal_review = read_reference(args.internal_review_json) if args.internal_review_json else None
+    mode_record = read_reference(args.production_mode_json) if args.production_mode_json else None
     units = read_script(args.script, args.episode)
     if args.dialogue_docx:
         groups = green_groups(args.dialogue_docx)
     else:
-        explicit_groups = {}
-        for unit in units:
-            if unit.get("kind") == "dialogue" and unit.get("dialogue_group"):
-                explicit_groups.setdefault(unit["dialogue_group"], []).append(unit["text"])
-        groups = list(explicit_groups.values())
+        previews = [{**u, "estimated_start": None, "estimated_end": None, "issues": []} for u in units]
+        groups = script_dialogue_groups(previews)
     requested_anchors = json.loads(args.anchors_json.read_text()) if args.anchors_json else []
     point_ids = [f"dialogue_{n:02}" for n in range(1, len(groups) + 1)] + [p["id"] for p in requested_anchors]
     if any(not isinstance(label, str) or not label for label in point_ids):
@@ -589,9 +801,16 @@ def main() -> None:
     pcm, decoder_version = decode(args.audio)
     decode_seconds = time.perf_counter() - decode_started
     transcript, timing = get_transcript(pcm, cache, args.force_transcribe, inputs)
+    transcript_path = cache / "transcripts" / (timing["cache_key"] + ".json") if timing.get("cache_key") else None
+    protected_results = inputs + ([transcript_path] if transcript_path else [])
+    ensure_no_collisions(planned + clip_outputs, protected_results)
+    raw_cache_file_sha = digest(transcript_path.read_bytes()) if transcript_path and transcript_path.exists() else None
     match_started = time.perf_counter()
     matched = match_units(units, transcript)
-    dialogues, warnings = add_groups(matched["units"], groups) if groups else ([], ["dialogue_groups_not_provided"])
+    if args.dialogue_docx:
+        dialogues, warnings = add_groups(matched["units"], groups) if groups else ([], ["dialogue_groups_not_provided"])
+    else:
+        dialogues, warnings = script_dialogue_groups(matched["units"]), []
     if matched["unused_asr_tokens"]:
         warnings.append("unmatched_asr_content_requires_review")
     if any(r.get("kind") == "dialogue" and not r.get("speaker") for r in matched["units"]):
@@ -611,13 +830,13 @@ def main() -> None:
         [("script", args.script), ("dialogue_docx", args.dialogue_docx), ("anchors", args.anchors_json)] if path}
     candidate = make_candidate(source_hashes[str(args.audio.absolute())], digest(pcm),
         len(pcm) / 32000, matched, dialogues, anchors, requested_anchors, warnings, source_content_hashes)
-    candidate_confirmation = evaluate_confirmation(candidate, confirmation)
+    candidate_confirmation = evaluate_adoption(candidate, confirmation, internal_review, mode_record)
     adoption = reference_comparison if reference is not None else candidate_confirmation
     match_seconds = time.perf_counter() - match_started
     # Check resolved paths and hard links before opening any generated WAV.
     clip_outputs = [output / "review_clips" / (re.sub(r"[^a-zA-Z0-9_-]", "_", p["id"]) + ".wav")
                     for p in dialogues + anchors]
-    ensure_no_collisions(clip_outputs, inputs)
+    ensure_no_collisions(clip_outputs, protected_results)
     clips = write_clips(pcm, dialogues + anchors, output)
     timing.update(decode_seconds=decode_seconds, matching_seconds=match_seconds,
                   total_seconds=time.perf_counter() - started)
@@ -625,24 +844,38 @@ def main() -> None:
         warnings.append("processing_exceeds_120_seconds: investigate timed stages")
     if any(digest(p.read_bytes()) != source_hashes[str(p.absolute())] for p in inputs):
         raise ValueError("An input changed during processing; do not treat this result as validated")
+    if raw_cache_file_sha is not None and digest(transcript_path.read_bytes()) != raw_cache_file_sha:
+        raise ValueError("Raw transcription cache changed during matching; do not treat this result as validated")
     result = dict(audio_file_sha256=source_hashes[str(args.audio.absolute())], decoded_pcm_sha256=digest(pcm),
         input_hashes=source_hashes, inputs_unchanged=True,
         decoded_duration_seconds=len(pcm) / 32000, source_origin_seconds=0,
         decoder_version=decoder_version, script_sha256=digest(args.script.read_bytes()),
+        raw_transcript_sha256=transcript_sha(transcript), raw_transcript_cache_unchanged=True,
         matching=matched, dialogue_groups=dialogues, anchors=anchors, review_clips=clips,
         warnings=warnings, timing=timing, automatic_pass=adoption["automatic_pass"],
         adoption_status=adoption["adoption_status"], reference_comparison=reference_comparison,
         candidate=candidate, candidate_content_sha256=transcript_sha(candidate),
         candidate_confirmation=candidate_confirmation,
+        audio_content_identity_sha256=audio_content_identity(candidate),
+        derived_anchors_sha256=derived_anchors_identity(candidate),
+        sentence_candidates=matched["units"],
+        internal_review=candidate_confirmation["internal_review"],
+        adoption_source=("user_reference_times" if reference is not None and adoption["automatic_pass"]
+                         else candidate_confirmation["adoption_source"] if reference is None else None),
+        scheme_approval=(candidate_confirmation["scheme_approval"] if reference is None
+                         else dict(approved=False, source=None)),
+        production_mode=(candidate_confirmation["production_mode"] if reference is None else "legacy_reference"),
+        generation_status="not_evaluated", finished_video_evaluation="not_evaluated",
         playback_verified=False, measured_boundary_error_seconds=None,
         validation=("user_reference_tolerance_2s; playback_truth_unverified" if reference is not None
-                    else "candidate_confirmation; no_independent_timing_reference; playback_truth_unverified"))
-    save(output / "result.json", result, inputs)
+                    else "bound_content_review_and_adoption_source; no_independent_timing_reference; playback_truth_unverified"))
+    save(output / "result.json", result, protected_results)
     if reference is not None:
         status = ("采用通过：全部用户参考边界差不超过2秒。尚未实际听检；参考差不等于实测误差。" if adoption["automatic_pass"]
                   else "采用未通过：" + ", ".join(adoption["blockers"]) + "。尚未实际听检。")
     elif adoption["automatic_pass"]:
-        status = "采用通过：用户已明确整体确认这份候选。无独立参考时码，不声称满足2秒参考差；听检未做。"
+        status = ("采用通过：已授权常规模式下GPT内部核查采用；不记用户方案认可。" if adoption["adoption_source"] == "gpt_internal_review"
+                  else "采用通过：GPT核查完成且用户一次集中方案确认包含这份音频候选。") + "无独立参考时码，不声称满足2秒参考差；听检未做。"
     elif adoption["simulated_adoption_pass"]:
         status = "测试演练：模拟整体确认条件通过，真实用户未采用，automatic_pass仍为false。无独立参考时码；听检未做。"
     elif adoption["blockers"]:
@@ -652,12 +885,31 @@ def main() -> None:
     lines = ["# 本机音频定位复核", "", status + "原台词以剧本为准。", "",
              f"原文件长度（解码）：{result['decoded_duration_seconds']:.4f} 秒。", ""]
     if reference is None:
-        lines.extend([f"一次候选确认摘要：{len(dialogues)}组对白、{len(anchors)}个剧本指定段首。以下原文、说话者、区间与少数疑点由Codex整理；用户可整体采用或指出局部问题，可随既有分段确认一起完成。无需填写JSON或整套时码。Codex只能依据真实明确回复保存确认；沉默不算确认。", "",
+        lines.extend([f"候选摘要：{len(matched['units'])}句段、{len(dialogues)}组对白、{len(anchors)}个当前派生段首。原句、说话者与直接听者来自GPT核定的剧本输入。GPT先处理内容／归属／边界疑点；验证模式随导演解读、画面和分段集中交用户一次整体确认。无需用户填写JSON或整套时码；沉默不算确认。常规模式只在已有真实落盘授权后内部采用。", "",
             f"完整候选内容指纹：`{result['candidate_content_sha256']}`。", ""])
         if args.candidate_confirmation_json is None:
             save(request_path, dict(basis="user_explicit", confirmed=False,
                 audio_file_sha256=result["audio_file_sha256"],
-                candidate_content_sha256=result["candidate_content_sha256"], confirmation_note=""), inputs)
+                audio_content_identity_sha256=result["audio_content_identity_sha256"],
+                derived_anchors_sha256=result["derived_anchors_sha256"], confirmation_note=""), protected_results)
+        if args.internal_review_json is None:
+            save(internal_request, dict(basis="gpt_internal_review", checked=False, project_scope="",
+                audio_file_sha256=result["audio_file_sha256"],
+                audio_content_identity_sha256=result["audio_content_identity_sha256"],
+                derived_anchors_sha256=result["derived_anchors_sha256"],
+                checks=dict(content_complete=False, roles_verified=False, boundaries_verified=False),
+                reviewed_unit_ids=[], unresolved_blockers=candidate_blockers(candidate),
+                review_source="", review_note=""), protected_results)
+    lines.extend(["| 句段 | 归属 | 说话者 → 直接听者 | 原句 | 原文件估计区间／秒 | 疑点 |",
+                  "|---|---|---|---|---|---|"])
+    for row in matched["units"]:
+        interval = "未确定" if row["estimated_start"] is None else f"{row['estimated_start']:.2f}–{row['estimated_end']:.2f}"
+        listener = row.get("listeners", row.get("listener")) or "—"
+        if isinstance(listener, list):
+            listener = ", ".join(listener)
+        text = row["text"].replace("|", "\\|").replace("\n", " ")
+        lines.append(f"| {row['id']} | {row.get('kind', '未核定')} | {row.get('speaker') or '旁白／未核定'} → {listener} | {text} | {interval} | {', '.join(row['issues']) or '听检未做'} |")
+    lines.append("")
     lines.extend(["| 标记 | 原文件估计区间／秒 | " + ("用户参考最大差／秒" if reference is not None else "采用状态") + " | 疑点 |",
                   "|---|---|---|---|"])
     comparisons = {p["id"]: p for p in adoption["comparison_points"]}
@@ -691,8 +943,12 @@ def main() -> None:
         automatic_pass=adoption["automatic_pass"], adoption_status=adoption["adoption_status"],
         maximum_reference_difference_seconds=reference_comparison["maximum_absolute_difference_seconds"],
         candidate_content_sha256=result["candidate_content_sha256"],
+        audio_content_identity_sha256=result["audio_content_identity_sha256"],
+        derived_anchors_sha256=result["derived_anchors_sha256"],
+        adoption_source=result["adoption_source"], production_mode=result["production_mode"],
         simulated_adoption_pass=candidate_confirmation["simulated_adoption_pass"],
-        confirmation_request_path=str(request_path) if reference is None and args.candidate_confirmation_json is None else None), ensure_ascii=False, indent=2))
+        confirmation_request_path=str(request_path) if reference is None and args.candidate_confirmation_json is None else None,
+        internal_review_request_path=str(internal_request) if reference is None and args.internal_review_json is None else None), ensure_ascii=False, indent=2))
 
 
 if __name__ == "__main__":

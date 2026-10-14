@@ -1,6 +1,8 @@
-# 可选本机英文音频定位
+# 本机英文音频定位与采用
 
-只在 Apple silicon Mac 上用 MLX Whisper 准备原音轨的估计时间对应。它不参加每轮导演判断，也不替代剧本、三时轴或原有人工定位。提供完整用户参考时码后，全部边界差不超过 2 秒即可采用通过；新集没有参考时码时，先整理候选，由用户一次明确整体确认或指出少数问题。采用依据与实际听检分别记录，不能据此宣称实测精度。
+V3.2 的正常入口是完整剧本、目标集完整 MP3/WAV 和实际资产。GPT通读后提取目标集，核定旁白／对白、说话者、直接听者和顺序，再调用现有本机工具；不要求用户做绿标、人工时码、单集拆解Word或填写JSON。语言和平台范围仍是已测 Apple silicon Mac 英文 MLX Whisper，不泛称全部语言或设备已验证。
+
+工具给出候选及匹配证据，GPT内部核对内容、归属和边界。默认**验证模式**随导演解读、画面设计和分段集中审核一次，用户明确整体回复同时记录音频采用；不会再追加音频审批。用户以后认可流程与实片效果、明确启用并落盘**常规模式**后，才允许GPT内部核查采用。版本发布、沉默、单独工具检查都不启用常规模式。采用、用户方案认可、实际听检和生成效果分别记录。
 
 ## 环境
 
@@ -13,82 +15,113 @@ python3.12 -m venv .codex_tmp/audio_v3/venv
 
 主选模型为 `mlx-community/whisper-small.en-mlx`（英文 small，约 481 MB），固定 revision `52a88bf6e98b114a210c21bb83e22d6e1505cb73`；固定 MLX `0.32.3`、MLX Whisper `0.4.3`、imageio-ffmpeg `0.6.0`。完整已测依赖记录在 lock 文件。首次下载从公开模型仓库读取权重；音频始终在本机解码和转写，不发往外部转写服务。模型文件不进入 Git。
 
-## 输入与运行
+## 默认输入与运行
 
-英文剧本可用带 `Episode 20`／`[P1258]` 的纯文本；用 `--episode 20` 选择本集。也可用 JSON 精确保留剧本段落、旁白／对白归属及说话者，避免工具推测角色：
+GPT以剧本语境确定归属，写入既有JSON接口；引号仅辅助句段划分，不推断说话者，ASR不通过声纹代替人物关系判断。
 
 ```json
 {"units": [
-  {"id": "p1", "text": "She stopped at the door.", "kind": "narration", "speaker": null},
-  {"id": "p2", "text": "\"Will you stay?\"", "kind": "dialogue", "speaker": "speaker_from_script", "dialogue_group": "group_1"}
+  {"id": "p1", "text": "She stopped at the door.", "kind": "narration", "speaker": "narrator"},
+  {"id": "p2", "text": "Will you stay?", "kind": "dialogue", "speaker": "actor_A", "listener": "actor_B"},
+  {"id": "p3", "text": "He looked away.", "kind": "narration", "speaker": "narrator"}
 ]}
 ```
 
-纯文本的引号只用于初分旁白／对白，不能可靠确定说话者。正式使用须以剧本语境核定归属，或在 JSON 提供 `speaker`；转写结果不覆盖原台词。
+旁白／对白全部保留逐句候选。对白可用 `listener` 或非空 `listeners`；未知说话者／听者不能进入V3.2采用。可选 `dialogue_group` 指定当前分组，未指定则按连续对白分组，旁白或显式分组变化处分开；没有绿标仍完整定位。原句和原始ASR保持原样；不能借工具改台词或金额。
 
-可选 `--dialogue-docx` 只读取 zip/XML 内**正文直接段落**的明确 run-level `highlight=green`，或 `shd fill=00ff00/92d050`，按连续绿标段落建立对白组，不渲染 Word。当前不支持表格内绿标、继承样式或其他绿色值；不能泛称所有 Word 绿标均可识别。绿标旧秒数不参与音频匹配。没有受支持绿标时，可在 JSON 明确 `dialogue_group`、`kind` 与剧本说话者完成分组；两者均未提供则提示分组缺失，保留人工归属入口。
-
-可选段首 JSON 仅指定剧本单位，不提供强制时间窗口：
-
-```json
-[{"id": "anchor_A", "unit_id": "p1", "historical_seconds": 25}]
+```sh
+.codex_tmp/audio_v3/venv/bin/python tools/local_audio/localize.py \
+  --audio '/absolute/path/episode.mp3' \
+  --script '/absolute/path/target_episode_units.json' \
+  --cache .codex_tmp/audio_v3 \
+  --out .codex_tmp/audio_v3/current_candidates
 ```
 
-`historical_seconds` 仅原样保存作比较；时间由完整音频与剧本顺序产生。原旁白段首、对白组、生成局部与剪辑时间仍须分开，不能用生成时长累加替换原音轨位置。
+纯文本仍接受 `Episode 20`／`[P1258]`，用 `--episode 20` 提取，但不能由引号可靠核定角色。GPT在正式采用前核定JSON角色；不是要求用户重新填表。
 
-用户明确采用 2 秒容差时，另用 `--reference-times-json` 提供参考。此文件绑定完整输入音频的文件 SHA256，明确 `basis: "user_supplied"` 与 `tolerance_seconds: 2`；须覆盖全部对白组首尾和全部所请求段首。对白组编号按来源顺序为 `dialogue_01`、`dialogue_02`……，段首编号与 anchors JSON 相同。以下仅为格式示例：
+可选 `--anchors-json` 只指定当前设计派生的句段单位，不提供强制时间窗口：
+
+```json
+[{"id": "anchor_A", "unit_id": "p1"}]
+```
+
+`historical_seconds` 兼容原样保存作比较，不能强制匹配或沿用旧分段。旁白段首、对白组、生成局部和剪辑时间分开；工具不替GPT决定段数。
+
+## 核查、一次整体确认与未来常规模式
+
+首次输出 `result.json`、`review.md`、关键短段和两个未完成模板：`internal_review_request.json` 的 `checked:false` 与 `candidate_confirmation_request.json` 的 `confirmed:false`。GPT先处理低置信、短句、重复和边界问题，能内部查清的不交用户作业；确实不能判断且影响执行才指出局部疑点。
+
+GPT核查后在结果目录外保存 `--internal-review-json` 记录：
 
 ```json
 {
-  "basis": "user_supplied",
-  "audio_file_sha256": "<完整输入音频的64位SHA256>",
-  "tolerance_seconds": 2,
+  "basis": "gpt_internal_review", "checked": true, "project_scope": "current_project",
+  "audio_file_sha256": "<当前完整文件SHA256>",
+  "audio_content_identity_sha256": "<当前音频内容身份SHA256>",
+  "derived_anchors_sha256": "<当前派生段首SHA256>",
+  "checks": {"content_complete": true, "roles_verified": true, "boundaries_verified": true},
+  "reviewed_unit_ids": ["p1", "p2", "p3"], "unresolved_blockers": [],
+  "review_source": "<本次实际核查的剧本、候选及相关证据>",
+  "review_note": "<实际核查结果；未解决问题不能写成已解决>"
+}
+```
+
+真实核查记录要覆盖全部句段，内容／角色／边界检查均完成、源版本和当前派生段首相符，并无未决阻断。检查标志不能掩盖程序发现的漏句、错配、角色未知、重复归属、零／不完整时码或正文ASR差异。记录不等于听检，工具始终保留 `playback_verified:false` 和实测误差 `null`。
+
+验证模式仍将解读、画面、分段和候选合成一份方案。用户一次真实回复整体采用或指出局部问题后，GPT复制确认模板到结果目录外，保存 `basis:user_explicit`、`confirmed:true` 和非空真实回复摘要。`--candidate-confirmation-json` 与核查文件一起运行到新输出目录；没有明确回复、空模板或只完成GPT核查，均不采用。用户无需填写JSON或整套时码。
+
+确认绑定音频文件及 `audio_content_identity_sha256`，不把候选时码抄成独立参考。通过来源是 `user_overall_confirmation`，`user_confirmation_recorded` 保存真实事实，`scheme_approval` 只描述该次原始整体回复的范围。候选未确认与核查未完成分别显示，不合并为实片通过。
+
+未来常规模式通过 `--production-mode-json` 读取已落盘授权，至少包含：
+
+```json
+{
+  "mode": "routine", "basis": "user_explicit", "authorized": true,
+  "project_scope": "current_project",
+  "authorization_source": "<用户实际启用常规模式的消息来源>",
+  "authorization_note": "<用户认可正常流程与实片效果后明确启用的真实摘要>"
+}
+```
+
+范围须与内部核查相同。没有模式记录默认为验证；内部核查文件本身不改变模式。已授权常规模式通过后来源是 `gpt_internal_review`、状态 `internally_adopted_candidates`，不写 `user_explicit` 音频确认、不伪造回复，也不记当前导演方案已获用户认可。模式授权持久保存在现有项目状态关联记录中，后续同范围新窗口读取它，不逐集重问；默认启用仍等待用户实际认可。
+
+测试记录的 `basis:test_simulation` 只用于受控演练；任一采用环节是模拟都保持 `automatic_pass:false`、真实用户确认和方案认可为false，只有 `simulated_adoption_pass:true`。不能将单测fixture或模拟回复写进真实项目采用页。
+
+### 内容身份与派生段首
+
+新候选schema为2，转写缓存 `VERSION=2` 保留。`audio_content_identity_sha256` 包含完整输入文件／PCM、实际原句、旁白／对白及说听角色、逐句完整估计边界、匹配疑点和对白组；不含路径、耗时或派生段首。`derived_anchors_sha256` 单独绑定当前段首。
+
+音频、原句、说听归属或匹配证据变更，使旧确认和核查失效。合法改分段只重新匹配已缓存词表、核验当前派生段首，更新内部核查，不重转整轨，也不重复询问未变音频采用。旧整体回复保留历史范围；新段首变化后 `scheme_approval.approved:false`、`covers_current_derived_anchors:false`，不能声称新导演方案已被认可。新增段首映射缺失或失效仍阻断。
+
+旧只带 `candidate_content_sha256` 的确认严格核对完整候选（包括段首），不会静默升级为新宽范围确认。新请求模板使用分开的内容身份与段首字段；候选完整快照SHA仍保留用于追溯。
+
+## 旧输入与2秒参考兼容
+
+`--dialogue-docx` 可读取正文直接段落的明确 run-level `highlight=green` 或 `shd fill=00ff00/92d050`，不渲染。表格绿标、继承样式及其他绿色值不支持。旧绿标秒数不参与配句，普通新项目不要求此文件。
+
+已有独立用户参考时码可单独用 `--reference-times-json`，绑定完整音频文件SHA、`basis:user_supplied`、`tolerance_seconds:2`，覆盖所有对白组首尾和请求段首。恰好2秒可通过，超出或内容阻断均拒绝；参考只在匹配完成后比较，不强制时间窗。此兼容路径保持旧speaker-only接口，不猜填听者；V3.2新候选采用须含剧本直接听者。参考参数与候选采用／内部核查／模式参数互斥。
+
+```json
+{
+  "basis": "user_supplied", "audio_file_sha256": "<完整文件SHA256>", "tolerance_seconds": 2,
   "dialogue_groups": {"dialogue_01": {"start": 44, "end": 46}},
   "anchors": {"anchor_A": {"start": 25}}
 }
 ```
 
-参考只在顺序匹配完成后作比较，不参与转写、配句或强制时间窗口。此比较分支的参考缺项、指纹不符、非有限时码、超过 2 秒、漏词、重复句归属不确定、分组覆盖或剧本说话者缺失均不能采用通过。重复 JSON 键会明确拒绝；不能用后一个值悄悄覆盖前一个。没有参考时码时走下方的候选确认入口，不要求用户补整套时码。
+兼容通过来源为 `user_reference_times`、状态 `user_reference_passed`；参考一致性不代表方案整体认可或听检精度。没有独立人工参考不再要求或声称满足≤2秒。
 
-```sh
-.codex_tmp/audio_v3/venv/bin/python tools/local_audio/localize.py \
-  --audio '/absolute/path/episode.mp3' \
-  --script '/absolute/path/english_script.txt' \
-  --episode 20 \
-  --dialogue-docx '/absolute/path/breakdown.docx' \
-  --anchors-json '/absolute/path/anchors.json' \
-  --reference-times-json '/absolute/path/user_reference_times.json' \
-  --cache .codex_tmp/audio_v3 \
-  --out .codex_tmp/audio_v3/current_result
-```
+## 输出、缓存与保护
 
-保留完整 MP3／WAV；本机以 ffmpeg 解码至 16 kHz 单声道 PCM，所有词时码与短 WAV 仍映射回输入文件原点。结果不裁掉开头静音或重置剪辑版本。输入文件 SHA 与解码 PCM SHA 都写入本地结果，用内容确认版本，不凭名称或历史总长认定同一音轨。
+- `result.json`：全部 `sentence_candidates`、原句及角色、估计首尾、遗漏／差异、对白组及派生段首；候选证据、GPT核查、采用来源、原始整体回复范围、听检和生成／成片状态各自明确。
+- `review.md` 与关键 `review_clips/*.wav`：候选原句、角色、区间及原点映射，便于内部处理相关疑点和集中审核。完整词表只留本地。
+- ASR缓存由解码内容SHA、既有cache VERSION、工具版本、固定模型及参数决定。相同音频复用词表，改镜头／段首不重转；`--force-transcribe` 仅为明确重转或性能请求。
 
-## 无参考时码的日常入口
+只允许经本轮确认的 `cancelled/canceled` 书写等价；匹配记录原剧本词、原ASR词、规范词及 `user_confirmed_cancelled_canceled_spelling` 来源。原文、ASR词表和原时码不改。`exact_tokens` 兼容字段表示受限规范化后的匹配覆盖，`equivalent_tokens` 与逐句 `spelling_equivalences` 单列；金额、人名、否定词、真实漏词／漏句均不模糊归一。
 
-省略 `--reference-times-json` 即正常输出候选对白组、`--anchors-json` 指定的内容段首及 `review.md` 的一次确认摘要。段首来自当前剧本单位与既有分段决定，不猜旧秒数，也不由这个音频工具重做导演分段。Codex整理原句、剧本说话者、候选区间及少数疑点；用户只需回复整体采用或指出局部问题，可随既有分段确认一起完成，无需填写JSON或整套时码。
+完整MP3/WAV本机解码到16kHz单声道PCM，原点为0；不去掉开头静音、不平移输入版本。模型manifest固定repo/revision及配置／权重SHA，缓存payload、schema和有限单调时码核验；破坏明确拒绝。输入与所有输出检查resolved path／hardlink碰撞并核对前后SHA，原始输入与原ASR不覆盖。音频和模型始终本机，不上传到转写服务或Git。
 
-未回复或未明确确认时，`automatic_pass: false`、`adoption_status: "candidate_pending_user_confirmation"`；硬性文本／归属缺项则为 `candidate_requires_correction`。工具同时生成本地 `candidate_confirmation_request.json`，默认 `confirmed: false`。**Codex只能在用户真实明确回复后保存确认事实**，复制该模板到结果目录外，记录 `basis: "user_explicit"`、`confirmed: true` 和真实回复摘要；摘要须为非空白字符串，缺失／空白／非字符串均不得保存用户确认事实或采用，不靠关键词猜认可。再以 `--candidate-confirmation-json` 运行到另一个输出目录。不把候选时码抄成独立参考，不从沉默推断同意。这个参数与 `--reference-times-json` 互斥。
-
-确认同时绑定输入音频 `audio_file_sha256` 和 `candidate_content_sha256`。完整候选包含正文单位原文、说话者、归属、估计首尾、对白组、全部请求段首、遗漏／疑点、原点、解码内容及来源内容SHA；路径、耗时和确认记录不参与其指纹。任何内容变更均使旧确认失效；改剧本／分组／段首仍只重新匹配已缓存词表。匹配缺词、重复归属不确定、对白说话者或段首缺失等硬性问题不会被一条确认掩盖。
-
-确认通过时为 `automatic_pass: true`、`adoption_status: "user_confirmed_candidates"`，`candidate_confirmation.confirmation_fact` 保存带UTC记录时间的明确回复事实。该分支无独立参考时码，`maximum_absolute_difference_seconds: null`；不声称满足 ≤2 秒参考差，`playback_verified: false` 与实测误差 `null` 继续保留。测试演练必须用 `basis: "test_simulation"`：仅 `simulated_adoption_pass: true`，真实采用和真实用户确认均为 false，状态为 `candidate_confirmation_simulated`。
-
-## 输出、缓存与复核
-
-- `result.json`：原台词、工具估计区间、遗漏／转写差异、短句与未确定边界、对白组和段首。`reference_comparison` 记录独立用户参考的逐点差、最大差及阻断原因；此分支通过时为 `user_reference_passed`。`candidate`、内容指纹及 `candidate_confirmation` 独立保存候选和明确确认事实，采用状态区分待确认、用户确认及测试演练。`playback_verified: false` 和 `measured_boundary_error_seconds: null` 明确保留听检未做。
-- `review.md`＋`review_clips/*.wav`：关键短段和原点映射，便于一次核对对白组词首、词尾、短句和段首。完整词表只留本地缓存，导演读取所需句段和疑点即可。
-- 转写缓存由解码音频内容 SHA、工具版本、模型 revision 和参数决定。相同内容复用完整词表，剧本变更只重新匹配；提示词变更不重转音频。`--force-transcribe` 仅为明确的性能测试或重转请求绕过缓存。
-
-模型本地 manifest 保存固定 repo／revision 和配置、权重 SHA；已核验模型离线复用，日常与强制 warm 测试不重复询问远端。词表缓存同时核对 payload SHA、schema 与有限非负单调时码；破坏明确拒绝并提示显式重转。输出与输入检查 resolved path／hardlink 碰撞，写短段前禁止覆盖原音频等输入，并核对处理前后输入 SHA。
-
-顺序全局词对齐避免把同一句复用到两处。与 ASR 不一致的词、被删句和重复句的未匹配部分显式保留；边界用实际匹配到的词估计，不为缺词补造秒数。零时长、不完整首尾和未配对的正文 ASR 内容阻断采用；低置信词及短句 `I...` 保留可选精检提示，不能写成已听检。相同文字重复且上下文也无法区分时，仍可能无法判断到底是哪处被删除；不要把一次单调配对写成音频真值。正文前后额外 ASR 内容仍显示警告，不能据此平移原文件原点。
-
-日常目标先测 1 分钟内；处理超过 2 分钟时检查结果中的分阶段耗时，区分模型下载、冷启动、转写、匹配和缓存。首次安装和下载单列，不能用缓存读取速度冒充第一次处理速度。
-
-已有参考时码的采用门槛按用户确认：对白组首尾和段首与用户参考时码相差不超过 2 秒即可通过并使用。恰好 2 秒可通过，超出或存在上述阻断项则不通过。无参考时按明确整体候选确认采用，不能自证参考差。此差值只表示对用户参考的一致性，时间网格和文本一致率均不能证明实际边界精度；没有实际播放真值时不得报告实测误差。用户仍可按短段局部精检或纠正，不再把完成 ±0.3 秒听检设为采用前置条件。
-
-本次 Codex 普通沙箱无法访问 Metal GPU；安装和本机转写在用户授权的本机执行权限下完成。若同样出现 `No Metal device available`，须用可访问 GPU 的本机终端／获授权执行环境；已有词表的本地匹配和缓存读取不需要加载 MLX。
+首次安装、模型下载、冷启动、转写、匹配与缓存耗时分列；缓存速度不冒充第一次处理速度。超过120秒应核对实际阶段。没有可访问Metal GPU的环境只进行已有词表匹配／缓存回归，不能报告转写成功。
 
 ## 依据与验收
 
@@ -98,4 +131,4 @@ python3.12 -m venv .codex_tmp/audio_v3/venv
 python3 -m unittest discover -s tools/local_audio -p 'test_*.py' -v
 ```
 
-有意义的验收覆盖：重复句不能复用同一词、少一次同文重复不能判定唯一归属、删除对白不能借后句、截断首尾不可冒充完整边界、短句零时长提示、改剧本复用词表、离线模型与篡改拒绝、原音频碰撞保护及缓存词时码校验；用户参考恰好 2 秒通过、超过／缺项／错指纹／错配拒绝；候选沉默不采用、显式事实保存、内容变更使确认失效、模拟确认不冒充真实用户采用，并始终区分采用通过和听检真值。真实样本的匿名性能与验证限制见[验收报告](validation_report.md)。
+有意义的验收覆盖既有失败保护，以及无绿标完整候选、一次真实集中确认、默认验证不会自行采用、受控常规授权与真实核查、模拟与真实采用隔离、原句／角色／音频变更失效、派生段首重校、受限书写等价：重复句不能复用同一词、少一次同文重复不能判定唯一归属、删除对白不能借后句、截断首尾不可冒充完整边界、短句零时长提示、改剧本复用词表、离线模型与篡改拒绝、原音频碰撞保护及缓存词时码校验；用户参考恰好 2 秒通过、超过／缺项／错指纹／错配拒绝；候选沉默不采用、显式事实保存、内容变更使确认失效、模拟确认不冒充真实用户采用，并始终区分采用通过和听检真值。真实样本的匿名性能与验证限制见[验收报告](validation_report.md)。

@@ -44,6 +44,7 @@ CORE_FILES = [
     "tools/local_audio/README.md",
     "tools/local_audio/validation_report.md",
     "validation/director_v3.md",
+    "validation/director_v32.md",
 ]
 
 ABSOLUTE_PATH_RE = re.compile(r"/(?:Users|var/folders)/")
@@ -84,6 +85,7 @@ def package_info(config: dict[str, str]) -> str:
 - 包名：`{config['package_name']}`
 - 版本：`{config['version']}`
 - 发布日期：`{config['release_date']}`
+- 发布状态：`{config.get('release_status', 'release')}`
 - 更新策略：仅在用户明确要求时手动更新
 - 内容：现行Seedance提示词规则、模板、技术摘要、匿名经验、空白项目结构与可选本机音频工具
 - 排除：所有历史项目、项目纪念目录、资产、审片、旧提示词、旧2.0 Skill与团队SOP
@@ -195,6 +197,7 @@ def main() -> None:
         "package_name": config["package_name"],
         "version": config["version"],
         "release_date": config["release_date"],
+        "release_status": config.get("release_status", "release"),
         "update_policy": config["update_policy"],
         "archive": archive_path.name,
         "sha256": archive_sha,

@@ -161,7 +161,7 @@ class MatchingTests(unittest.TestCase):
 
 class UserReferenceTests(unittest.TestCase):
     def fixture(self, heard="Stay with me."):
-        units = [{"id": "u1", "text": '"Stay with me."', "kind": "dialogue", "speaker": "script_actor"}]
+        units = [{"id": "u1", "text": '"Stay with me."', "kind": "dialogue", "speaker": "script_actor", "listener": "script_listener"}]
         matched = localize.match_units(units, transcript(heard))
         groups, _ = localize.add_groups(matched["units"], [['"Stay with me."']])
         row = matched["units"][0]
@@ -213,6 +213,15 @@ class UserReferenceTests(unittest.TestCase):
         result = self.evaluate(fixture)
         self.assertFalse(result["automatic_pass"])
         self.assertIn("reference_audio_fingerprint_mismatch", result["blockers"])
+
+    def test_legacy_reference_rejects_explicit_unknown_speaker_without_guessing_listener(self):
+        for speaker in ("unknown", "tbd", "未知", "待确认", "不明", " ", None):
+            with self.subTest(speaker=speaker):
+                fixture = self.fixture()
+                fixture[2]["units"][0]["speaker"] = speaker
+                result = self.evaluate(fixture)
+                self.assertFalse(result["automatic_pass"])
+                self.assertIn("u1:script_speaker_not_provided", result["blockers"])
 
     def test_reference_tolerance_cannot_mask_missing_words_or_ambiguous_repeat(self):
         fixture = self.fixture("Stay with")
@@ -362,6 +371,214 @@ class CandidateConfirmationTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, "not both"):
                 localize.main()
             decoder.assert_not_called()
+
+
+class ProductionModeTests(unittest.TestCase):
+    def fixture(self):
+        candidate, _ = CandidateConfirmationTests().fixture()
+        reply = dict(basis="user_explicit", confirmed=True,
+            audio_file_sha256=candidate["audio_file_sha256"],
+            audio_content_identity_sha256=localize.audio_content_identity(candidate),
+            derived_anchors_sha256=localize.derived_anchors_identity(candidate),
+            confirmation_note="Unit-test fixture for a recorded overall reply.")
+        review = dict(basis="gpt_internal_review", checked=True, project_scope="anonymous_test_project",
+            audio_file_sha256=candidate["audio_file_sha256"],
+            audio_content_identity_sha256=localize.audio_content_identity(candidate),
+            derived_anchors_sha256=localize.derived_anchors_identity(candidate),
+            checks=dict(content_complete=True, roles_verified=True, boundaries_verified=True),
+            reviewed_unit_ids=[r["id"] for r in candidate["matching"]["units"]],
+            unresolved_blockers=[], review_source="unit-test evidence only",
+            review_note="All source units, supplied roles and current mapped boundaries checked.")
+        mode = dict(mode="routine", basis="user_explicit", authorized=True,
+            project_scope="anonymous_test_project", authorization_source="unit-test authorization fixture",
+            authorization_note="Unit-test fixture; enable routine after verified workflow recognition.")
+        return candidate, reply, review, mode
+
+    def test_no_green_or_reference_produces_all_sentence_candidates_and_script_roles(self):
+        units = [{"id": "n", "text": "She stopped.", "kind": "narration", "speaker": "narrator"},
+            {"id": "d", "text": "Stay with me.", "kind": "dialogue", "speaker": "actor", "listener": "other_actor"},
+            {"id": "n2", "text": "He paused.", "kind": "narration", "speaker": "narrator"}]
+        heard = transcript("She stopped. Stay with me. He paused.")
+        matched = localize.match_units(units, heard)
+        groups = localize.script_dialogue_groups(matched["units"])
+        candidate = localize.make_candidate("a" * 64, "b" * 64, 3, matched, groups, [], [], [], {"script": "c" * 64})
+        self.assertEqual(len(candidate["matching"]["units"]), 3)
+        self.assertEqual(groups[0]["unit_ids"], ["d"])
+        self.assertEqual(matched["units"][1]["listener"], "other_actor")
+        self.assertEqual(localize.candidate_blockers(candidate), [])
+        self.assertFalse(localize.evaluate_adoption(candidate)["automatic_pass"])
+
+    def test_default_verification_requires_bound_internal_check_and_one_overall_reply(self):
+        candidate, reply, review, _ = self.fixture()
+        self.assertFalse(localize.evaluate_adoption(candidate, None, review)["automatic_pass"])
+        self.assertFalse(localize.evaluate_adoption(candidate, reply)["automatic_pass"])
+        result = localize.evaluate_adoption(candidate, reply, review)
+        self.assertTrue(result["automatic_pass"])
+        self.assertEqual(result["production_mode"], "verification")
+        self.assertEqual(result["adoption_source"], "user_overall_confirmation")
+        self.assertTrue(result["scheme_approval"]["approved"])
+        self.assertTrue(result["user_confirmation_recorded"])
+        self.assertFalse(result["playback_verified"])
+
+    def test_routine_requires_persisted_authority_and_actual_complete_review(self):
+        candidate, _, review, mode = self.fixture()
+        result = localize.evaluate_adoption(candidate, None, review, mode)
+        self.assertTrue(result["automatic_pass"])
+        self.assertEqual(result["adoption_source"], "gpt_internal_review")
+        self.assertFalse(result["user_confirmation_recorded"])
+        self.assertIsNone(result["confirmation_fact"])
+        self.assertFalse(result["scheme_approval"]["approved"])
+        for field in ("authorized", "authorization_source", "authorization_note", "project_scope", "basis"):
+            with self.subTest(field=field):
+                broken = {k: v for k, v in mode.items() if k != field}
+                self.assertFalse(localize.evaluate_adoption(candidate, None, review, broken)["automatic_pass"])
+        review["checks"]["roles_verified"] = False
+        self.assertFalse(localize.evaluate_adoption(candidate, None, review, mode)["automatic_pass"])
+
+    def test_routine_cannot_hide_content_missing_role_or_unresolved_review(self):
+        for mutation in ("missing", "speaker", "listener", "repeat", "unresolved", "scope"):
+            with self.subTest(mutation=mutation):
+                candidate, _, review, mode = self.fixture()
+                row = candidate["matching"]["units"][0]
+                if mutation == "missing":
+                    row["missing_tokens"] = ["me"]
+                    row["issues"].append("missing_or_asr_changed_tokens")
+                elif mutation in ("speaker", "listener"):
+                    row[mutation] = "unknown"
+                elif mutation == "repeat":
+                    row["issues"].append("ambiguous_repeat")
+                elif mutation == "unresolved":
+                    review["unresolved_blockers"] = ["a concrete unresolved role conflict"]
+                else:
+                    review["project_scope"] = "another_project"
+                review["audio_content_identity_sha256"] = localize.audio_content_identity(candidate)
+                self.assertFalse(localize.evaluate_adoption(candidate, None, review, mode)["automatic_pass"])
+        for field in ("speaker", "listener"):
+            for placeholder in ("未知", "待确认", "不明", "待定", "未核定", "未确定"):
+                with self.subTest(field=field, placeholder=placeholder):
+                    candidate, _, review, mode = self.fixture()
+                    candidate["matching"]["units"][0][field] = placeholder
+                    review["audio_content_identity_sha256"] = localize.audio_content_identity(candidate)
+                    result = localize.evaluate_adoption(candidate, None, review, mode)
+                    self.assertFalse(result["automatic_pass"])
+                    self.assertIn("u1:script_" + field + "_not_provided", result["blockers"])
+
+    def test_simulated_review_authority_or_reply_never_becomes_real_adoption(self):
+        for source in ("review", "authority", "reply"):
+            with self.subTest(source=source):
+                candidate, reply, review, mode = self.fixture()
+                record = {"review": review, "authority": mode, "reply": reply}[source]
+                record["basis"] = "test_simulation"
+                result = localize.evaluate_adoption(candidate, reply, review, mode)
+                self.assertFalse(result["automatic_pass"])
+                self.assertTrue(result["simulated_adoption_pass"])
+                self.assertFalse(result["user_confirmation_recorded"])
+                self.assertFalse(result["scheme_approval"]["approved"])
+                self.assertFalse(result["playback_verified"])
+
+    def test_audio_text_speaker_listener_change_expires_bound_confirmation_and_review(self):
+        for field in ("audio", "text", "speaker", "listener"):
+            with self.subTest(field=field):
+                candidate, reply, review, _ = self.fixture()
+                if field == "audio":
+                    candidate["audio_file_sha256"] = "d" * 64
+                else:
+                    candidate["matching"]["units"][0][field] = "changed_source_value"
+                result = localize.evaluate_adoption(candidate, reply, review)
+                self.assertFalse(result["automatic_pass"])
+                self.assertIn("confirmation_audio_content_identity_mismatch", result["blockers"])
+
+    def test_new_derived_anchor_rechecks_without_reasking_same_audio_or_approving_new_scheme(self):
+        candidate, reply, review, _ = self.fixture()
+        original_identity = localize.audio_content_identity(candidate)
+        original_complete_hash = localize.transcript_sha(candidate)
+        second = {**candidate["anchors"][0], "id": "anchor_B"}
+        candidate["anchors"].append(second)
+        candidate["requested_anchors"].append({"id": "anchor_B", "unit_id": "u1"})
+        candidate["source_content_hashes"]["anchors"] = "new_derived_anchor_source"
+        self.assertEqual(localize.audio_content_identity(candidate), original_identity)
+        self.assertNotEqual(localize.transcript_sha(candidate), original_complete_hash)
+        self.assertFalse(localize.evaluate_adoption(candidate, reply, review)["automatic_pass"])
+        review["derived_anchors_sha256"] = localize.derived_anchors_identity(candidate)
+        result = localize.evaluate_adoption(candidate, reply, review)
+        self.assertTrue(result["automatic_pass"])
+        self.assertFalse(result["scheme_approval"]["approved"])
+        self.assertFalse(result["scheme_approval"]["covers_current_derived_anchors"])
+        candidate["anchors"][1]["unit_id"] = "absent_unit"
+        review["derived_anchors_sha256"] = localize.derived_anchors_identity(candidate)
+        self.assertFalse(localize.evaluate_adoption(candidate, reply, review)["automatic_pass"])
+
+    def test_legacy_complete_candidate_confirmation_does_not_silently_unlock_derived_changes(self):
+        candidate, confirmation = CandidateConfirmationTests().fixture()
+        candidate["requested_anchors"].append({"id": "anchor_missing", "unit_id": "u1"})
+        result = localize.evaluate_confirmation(candidate, confirmation)
+        self.assertFalse(result["automatic_pass"])
+        self.assertIn("confirmation_candidate_fingerprint_mismatch", result["blockers"])
+
+    def test_limited_spelling_equivalence_preserves_source_and_asr_provenance(self):
+        units = [{"id": "u", "text": "She cancelled the meeting.", "kind": "narration"}]
+        heard = transcript("She canceled the meeting.")
+        raw_before = localize.transcript_sha(heard)
+        matched = localize.match_units(units, heard)
+        self.assertEqual(matched["script_tokens"], matched["exact_tokens"])
+        self.assertEqual(matched["equivalent_tokens"], 1)
+        self.assertEqual(matched["units"][0]["text"], units[0]["text"])
+        equivalent = matched["units"][0]["spelling_equivalences"][0]
+        self.assertEqual((equivalent["script_token"], equivalent["asr_token"]), ("cancelled", "canceled"))
+        self.assertEqual(localize.transcript_sha(heard), raw_before)
+
+    def test_equivalence_never_hides_money_negation_names_or_missing_sentence(self):
+        for script, heard in [("She paid 100 dollars.", "She paid 200 dollars."),
+                ("She did not leave.", "She did leave."), ("Maya canceled it.", "Mila canceled it."),
+                ("She cancelled it. He stayed.", "She canceled it.")]:
+            with self.subTest(script=script):
+                matched = localize.match_units([{"id": "u", "text": script, "kind": "narration"}], transcript(heard))
+                candidate = localize.make_candidate("a" * 64, "b" * 64, 3, matched, [], [], [], [], {"script": "c" * 64})
+                self.assertIn("script_alignment_incomplete", localize.candidate_blockers(candidate))
+
+    def test_default_cli_outputs_narration_dialogue_and_unadopted_templates_without_input_overwrite(self):
+        import io
+        with tempfile.TemporaryDirectory(dir=TEST_TMP) as directory:
+            root = Path(directory)
+            audio, script = root / "episode.mp3", root / "units.json"
+            audio.write_bytes(b"original fixture audio")
+            localize.save(script, dict(units=[{"id": "n", "text": "She stopped.", "kind": "narration", "speaker": "narrator"},
+                {"id": "d", "text": "Stay with me.", "kind": "dialogue", "speaker": "actor", "listener": "other"}]))
+            before = {p: p.read_bytes() for p in (audio, script)}
+            argv = ["localize.py", "--audio", str(audio), "--script", str(script), "--out", str(root / "out")]
+            with patch.object(sys, "argv", argv), patch.object(localize, "decode", return_value=(b"\x01\x02" * 64000, "fixture decoder")), \
+                    patch.object(localize, "get_transcript", return_value=(transcript("She stopped. Stay with me."), {"transcript_cache_hit": True})), \
+                    patch.object(sys, "stdout", io.StringIO()):
+                localize.main()
+            result = json.loads((root / "out/result.json").read_text())
+            self.assertEqual(len(result["sentence_candidates"]), 2)
+            self.assertEqual(len(result["dialogue_groups"]), 1)
+            self.assertFalse(result["automatic_pass"])
+            self.assertEqual(result["production_mode"], "verification")
+            self.assertFalse(json.loads((root / "out/candidate_confirmation_request.json").read_text())["confirmed"])
+            self.assertFalse(json.loads((root / "out/internal_review_request.json").read_text())["checked"])
+            self.assertEqual({p: p.read_bytes() for p in (audio, script)}, before)
+
+    def test_output_hardlink_to_original_asr_cache_is_rejected(self):
+        import os
+        with tempfile.TemporaryDirectory(dir=TEST_TMP) as directory:
+            root = Path(directory)
+            audio, script = root / "episode.mp3", root / "units.json"
+            audio.write_bytes(b"original audio")
+            localize.save(script, dict(units=[{"id": "n", "text": "She stopped.", "kind": "narration"}]))
+            raw = root / "cache/transcripts/abc.json"
+            raw.parent.mkdir(parents=True)
+            original = b'{"original_ASR": true}'
+            raw.write_bytes(original)
+            (root / "out").mkdir()
+            os.link(raw, root / "out/result.json")
+            argv = ["localize.py", "--audio", str(audio), "--script", str(script),
+                "--cache", str(root / "cache"), "--out", str(root / "out")]
+            with patch.object(sys, "argv", argv), patch.object(localize, "decode", return_value=(b"\x01\x02" * 64000, "fixture decoder")), \
+                    patch.object(localize, "get_transcript", return_value=(transcript("She stopped."), {"cache_key": "abc", "transcript_cache_hit": True})):
+                with self.assertRaisesRegex(ValueError, "collision"):
+                    localize.main()
+            self.assertEqual(raw.read_bytes(), original)
 
 
 if __name__ == "__main__":
