@@ -12,3 +12,5 @@
 包内只含显式核心白名单、匿名验收与空项目索引，不含真实项目、媒体、模型、缓存、聊天或本机路径。下载ZIP后以同名`.zip.sha256`核完整性。`latest.json`描述当前试制包，main不切换为本版。
 
 Core 1.3.0为V3.3本地候选包，尚未推送分支、标签或GitHub Release；latest.json若指向1.3.0表示本地构建结果，不代表远端已发布。旧1.2.0远端发布保持。
+
+Core 1.4.0（2026-10-14）为[ V3.4短剧表现力与结构改定试制版](https://github.com/zengyies-ux/AIGC_Vedio_codex/releases/tag/core-v1.4.0)，分支`codex/director-v3-4`、标签`core-v1.4.0`，GitHub为prerelease。当前`latest.json`为该包的构建信息，远端发布另以Release及回读校验为依据。规则／工具／匿名文本验收见[本版说明](../validation/director_v34.md)；新实片及网页执行未验证，网页技能未合入。旧版本原样保留。

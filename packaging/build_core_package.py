@@ -46,6 +46,7 @@ CORE_FILES = [
     "validation/director_v3.md",
     "validation/director_v32.md",
     "validation/director_v33.md",
+    "validation/director_v34.md",
     "tools/prompt_review/check_prompt.py",
     "tools/prompt_review/test_check_prompt.py",
     "tools/prompt_review/README.md",
