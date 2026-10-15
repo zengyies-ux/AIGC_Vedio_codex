@@ -1,58 +1,16 @@
 # Seedance Codex Workflow Core
 
-供GPT执行Seedance短剧导演及网页准备工作流的干净核心包，不含项目剧本、资产、操作记录或成片。1.6.0为V3.6本地候选：沿用有效导演／声音、6—10秒可剪素材、协作、七栏、摄影与原生填稿，按明确任务范围准备真实源、视频延长模式、片段区间、视频槽／正文视频、人物场景和新增秒数；不提交生成／付费。
-## 使用方式
+供Codex执行Seedance短剧导演、原生填稿及视频延长准备的干净核心包，不含项目剧本、素材、操作记录或成片。当前Core1.6.1为V3.6分支候选，未创建该版本tag／Release，新一集完整链路待验；旧公开Core1.5.1也为prerelease，保留原样。
 
-1. 新会话先读`AGENTS.md`。
-2. 用户本轮最新要求、当前剧本、时码、素材和真实成片反馈始终优先。
-3. 按任务读取`memories/seedance_workflow/`中的相关章节，不一次加载全部文件。
-4. 新项目使用`memories/seedance_workflow/projects/PROJECT_TEMPLATE.md`建立目录，并登记到空白项目索引。
-5. 完整提示词写入项目`prompts/`文件；聊天默认返回文件链接和必要说明。
+将仓库地址与“请按指定版本部署到本机”交给Codex，依[唯一部署说明](DEPLOYMENT.md)完成获取、版本／SHA／MANIFEST校验、独立环境准备和核心／音频／浏览器自检。已持有本包仍先校验来源和清单，升级保护用户项目与缓存。此包内README仅为地图，部署步骤不另写一套。
 
-## 包含内容
+- 日常唯一规则入口：[AGENTS.md](AGENTS.md)。默认验证模式保留；本次明确自主授权按其范围内部采用，不推成全局常规模式。
+- 制作入口：[通用基线与短续做词](NEW_PROJECT_CONVERSATION_PROMPT.md)。材料目录由Codex定位输入，三名A／B／C协作由主控汇合，资产核身份及阶段状态。
+- 核心规则：[工作流导航](memories/seedance_workflow/README.md)；素材适配与时间政策各保单一出处，保原句、有效情绪／肢体因果、声音跨镜、七栏、摄影和整集额外6—10秒可剪素材。
+- 项目结构：[空项目索引](memories/seedance_workflow/projects/INDEX.md)与[项目模板](memories/seedance_workflow/projects/PROJECT_TEMPLATE.md)。空索引仅供新安装，不覆盖升级中的个人索引。
+- 网页按任务才读[唯一技能](extensions/seedance-jumeng-operator/SKILL.md)：原生独立卡，延长按真实同源卡模式／源区间／视频槽和正文真实节点准备，模型2.5Pro／480P／整数新增秒最后回读；不生成、批量生成或付费。
+- 已验与边界：[匿名V3.6说明](validation/director_v36.md)。两条延长准备已验，参数重访会回退；本次阶段适配与源就绪续做规则改定，不冒充新一集或修复实片已通过。
 
-```text
-AGENTS.md
-README.md
-ROADMAP.md
-CHANGELOG.md
-PACKAGE_INFO.md
-memories/seedance_workflow/
-├── README.md
-├── director_os.md
-├── model_behavior.md
-├── seedance_2_5_technical_notes.md
-├── execution_rules.md
-├── prompt_template.md
-├── continuity_and_review.md
-├── director_patterns.md
-├── animal_city_motion.md
-├── visual_language_learning_notes.md
-├── live_action_dialogue_drama.md
-├── field_lessons.md
-└── projects/
-    ├── INDEX.md
-    └── PROJECT_TEMPLATE.md
-```
+本机音频当前已验Apple Silicon Mac英文MLX Whisper，Windows音频待适配；安装与自检由Codex执行，细节沿[部署说明](DEPLOYMENT.md)及[音频工具](tools/local_audio/README.md)。下载技能文本不等于浏览器已连接。
 
-本机音频工具位于`tools/local_audio/`，当前已验证范围为Apple silicon Mac／英文MLX Whisper。模型、词表和短段留本机；默认调用已有工具定位，依赖/环境首次准备一次，后续复用同音轨缓存。模式、预算与采用依据查[执行规则](memories/seedance_workflow/execution_rules.md#sound-and-time)，必要资产查[参考规则](memories/seedance_workflow/execution_rules.md#references)，不重复写一套政策。
-
-当前默认验证模式：解读、分段和音频候选一次整体审核后出正式提示词。已实现并测试常规内部采用路径，默认启用仍须用户认可正常流程与效果并落盘；沉默、工具估计或版本发布不启用。旧Word／绿标／人工参考可兼容，不成为正常输入前提。实际音频定位采用、用户方案认可、听检与成片评价分别记录。
-
-日常以`AGENTS.md`为唯一入口，项目状态指向当前采用稿；普通提示词制作不加载网页规程。只原生填写读[填稿](extensions/seedance-jumeng-operator/references/fill-and-verify.md)，明确延长准备读[唯一路由](extensions/seedance-jumeng-operator/references/video-extension.md)，不从准备授权推导生成或发布。
-
-两条实际延长准备完成，源卡内编辑续段；模式、完整源区间、槽与正文视频同源、1视频5图及全文重访保持，原生草稿／历史不变。新增时长回5秒，恢复23后仅当前同页正确；未生成、延长实片／回执／声画接缝未验。详见[匿名说明](validation/director_v36.md)。
-
-此候选只本机保存，尚未GitHub发布；旧`core-v1.5.1`和历史包保留。新版本和标签仅在用户明确授权发布后执行，不能把本地ZIP当远端成功。
-## 明确排除
-
-- 所有历史与活动项目正文。
-- `PROJECT_HISTORY.md`及项目纪念信息。
-- 角色、场景、道具、音频、视频、截图与审片证据。
-- 旧Seedance 2.0社区Skill。
-- 面向人类组员且尚待修订的团队SOP。
-- 临时文件、缓存、渲染预览和旧压缩包。
-
-## 更新原则
-
-本包只在用户明确要求时手动发布新版本。普通项目反馈不会自动进入核心规则；只有用户明确要求的大更新或已经跨项目验证的经验才纳入。已实现、试制待验证与后续网页计划分别见`ROADMAP.md`，不增加制作步骤。
+包内PACKAGE_INFO.md记录版本和候选状态，MANIFEST.sha256列文件哈希；ROADMAP.md只记能力与待验，不添加制作步骤。历史项目、剧本、原音频、角色／场景图、成片、截图、真实网址／ID、缓存、旧社区Skill及团队SOP均不在本包内。只按用户明确要求手动更新，不自动同步或改旧标签。

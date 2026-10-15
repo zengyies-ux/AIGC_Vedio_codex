@@ -23,6 +23,7 @@ RELEASES_DIR = REPO_ROOT / "releases"
 CORE_FILES = [
     "AGENTS.md",
     "NEW_PROJECT_CONVERSATION_PROMPT.md",
+    "DEPLOYMENT.md",
     "ROADMAP.md",
     "memories/seedance_workflow/README.md",
     "memories/seedance_workflow/director_os.md",

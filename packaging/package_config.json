@@ -1,8 +1,8 @@
 {
   "package_name": "Seedance_Codex_Workflow_Core",
-  "version": "1.6.0",
+  "version": "1.6.1",
   "release_date": "2026-10-15",
   "update_policy": "manual_only_when_user_requests",
-  "summary": "V3.6本地候选：保已有导演、声音、素材和原生填稿，新增明确授权的视频延长准备。实际两条完整原生源29.056/22.08秒各新增23，模式/源槽/同区间正文视频/5图片及全文重访保留，原生草稿不变；新增秒数重访回5，恢复后仅当前同页正确。未生成/付费，延长实片和同步未验；本轮未远端发布。",
-  "release_status": "local_candidate"
+  "summary": "V3.6分支候选补丁：修身份正确但阶段／身体状态冲突被错误放行，A到C到主控落实适配；明确整集延长准备授权及待源恢复、GPT必要局部核源。统一部署入口由Codex辨版本、校验和准备受支持环境，Windows音频待适配。保有效导演／声音／素材及6—10秒储备，复用两条已验延长准备，不重做旧集或生成。未建立本版tag／Release，新一集完整链路待验。",
+  "release_status": "branch_candidate"
 }

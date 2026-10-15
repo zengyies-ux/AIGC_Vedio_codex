@@ -20,3 +20,5 @@ Core 1.5.0（2026-10-15）为[V3.5剪辑余量与填稿试制版](https://github
 Core 1.5.1（2026-10-15）为[V3.5独立原生段多卡填稿补验补丁](https://github.com/zengyies-ux/AIGC_Vedio_codex/releases/tag/core-v1.5.1)，沿`codex/director-v3-5`使用全新标签，不覆盖1.5.0。保留19秒卡、新建26秒七图卡，正文／节点往返持久通过，逐卡时长返回4秒后恢复、仅同页正确；模型／分辨率和卡映射核对补齐。无生成或完整延长，实际发布以Release及附件回读为准。
 
 Core1.6.0（2026-10-15）为V3.6本地候选，未推送／标签或GitHub Release；`latest.json`表示本机构建，不表示远端发布。两条延长准备已实测，新增秒数重访回5后恢复、只当前同页正确；未生成或验证延长成片。详见[匿名说明](../validation/director_v36.md)，此前公开点仍core-v1.5.1，旧发行物不覆盖。
+
+Core1.6.1（2026-10-15）是V3.6工作分支候选，修资产阶段适配放行、必要局部核源／待源续做与Codex部署入口；只推codex/director-v3-6供审查，未创建本版tag／Release，不能当稳定发布。latest.json现表示1.6.1候选构建，历史各版本段落记录当时发布状态；1.6.0旧ZIP及全部旧发行物保持。默认main仍旧备份，当前公开Release入口仍core-v1.5.1（prerelease）。[唯一部署说明](../DEPLOYMENT.md)区分发布包、分支候选、制作目录及受支持环境；[匿名验收](../validation/director_v36.md)列已验与待验。
