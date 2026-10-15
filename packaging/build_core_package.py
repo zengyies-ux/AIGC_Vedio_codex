@@ -48,6 +48,7 @@ CORE_FILES = [
     "validation/director_v33.md",
     "validation/director_v34.md",
     "validation/director_v35.md",
+    "validation/director_v36.md",
     "extensions/seedance-jumeng-operator/SKILL.md",
     "extensions/seedance-jumeng-operator/references/fill-and-verify.md",
     "extensions/seedance-jumeng-operator/references/evidence.md",
