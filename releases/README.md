@@ -14,3 +14,5 @@
 Core 1.3.0为V3.3本地候选包，尚未推送分支、标签或GitHub Release；latest.json若指向1.3.0表示本地构建结果，不代表远端已发布。旧1.2.0远端发布保持。
 
 Core 1.4.0（2026-10-14）为[ V3.4短剧表现力与结构改定试制版](https://github.com/zengyies-ux/AIGC_Vedio_codex/releases/tag/core-v1.4.0)，分支`codex/director-v3-4`、标签`core-v1.4.0`，GitHub为prerelease。当前`latest.json`为该包的构建信息，远端发布另以Release及回读校验为依据。规则／工具／匿名文本验收见[本版说明](../validation/director_v34.md)；新实片及网页执行未验证，网页技能未合入。旧版本原样保留。
+
+Core 1.5.0（2026-10-15）为[V3.5剪辑余量与填稿试制版](https://github.com/zengyies-ux/AIGC_Vedio_codex/releases/tag/core-v1.5.0)，分支`codex/director-v3-5`、标签`core-v1.5.0`，prerelease。额外6—10秒素材，身份／空间／下游及视频引用核对；网页正文／6图片节点重访保留，参数只同页通过，生成和完整延长未执行。详细范围见[匿名说明](../validation/director_v35.md)，实际远端以Release与附件回读为准。旧包与main不变。

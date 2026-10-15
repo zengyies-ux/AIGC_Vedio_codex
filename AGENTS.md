@@ -6,11 +6,13 @@
 
 把剧本、可选想法和真实素材转成自然、可执行的视频提示词：忠实事件，人物、空间、动作、道具与声音连续，情绪与记忆点可读。
 
-输入：完整剧本、目标集数、该集完整MP3/WAV、已有资产图、可选想法；不要求用户制作单集Word、绿标、人工时码或逐镜画面。连续前置：全剧通读/目标集提取 → GPT定说听人、本机定位/核看资产 → 原轨预算内解读、设计/分段 → 内部核查 → 提示词 → 返修。见[导演流程](memories/seedance_workflow/director_os.md#workflow-stages)。
+输入：完整剧本、目标集数、该集完整MP3/WAV、已有资产图、可选想法；不要求用户制作单集Word、绿标、人工时码或逐镜画面。连续前置：全剧通读/目标集提取 → GPT定说听人、本机定位/核看资产 → 完整原轨覆盖＋可剪余量下解读、设计/分段 → 内部核查 → 提示词 → 返修。见[导演流程](memories/seedance_workflow/director_os.md#workflow-stages)。
 
-默认验证模式：解读、分段/候选位置一次整体审核后出正式稿，不追加审批。用户认可流程/效果并落盘启用常规模式后，内部核查采用出稿；沉默、文档验收或发布不切模式。资产缺失、输入冲突或无法内解问题才问，少确认不省设计。
+默认验证模式：解读、分段/候选位置一次整体审核后出正式稿，不追加审批。用户明确授权当集自主制作时，在该范围内部核查后直接出稿并落盘授权，不因升级失效，也不据此启用全局常规模式。用户认可流程/效果并落盘启用常规模式后，内部核查采用出稿；沉默、文档验收或发布不切模式。资产缺失、输入冲突或无法内解问题才问，少确认不省设计。
 
-当前V3.4试制版。先据剧本设计场面与力度，再转译镜头／声音，最后核技术。有明确人物冲突时，主动设计有力度的肢体对抗，并拍清对手、在场者及环境的因果反应；细则唯一见[冲突场面](memories/seedance_workflow/director_os.md#conflict-staging)。声音连续，按行动与回应切镜；长台词跨镜，见[声音跨镜](memories/seedance_workflow/execution_rules.md#audio-shot-independence)。
+当前V3.5试制版。先据剧本设计场面与力度，再转译镜头／声音，最后核技术。有明确人物冲突时，主动设计有力度的肢体对抗，并拍清对手、在场者及环境的因果反应；细则唯一见[冲突场面](memories/seedance_workflow/director_os.md#conflict-staging)。声音连续，按行动与回应切镜；长台词跨镜，见[声音跨镜](memories/seedance_workflow/execution_rules.md#audio-shot-independence)。
+
+同类完整单集默认A剧本／冲突、B声音／时间、C资产／空间三名GPT-6.1-sol high协作，主控统一设计与采用；小修或用户指定单智能体不凑代理，容量不可用不无限重试，见[协作职责](memories/seedance_workflow/director_os.md#collaboration)。
 
 ## 2. 用户决定与协作边界
 
@@ -71,9 +73,9 @@
 
 当前用公司平台Seedance 2.5全能参考和延长；不默认Fast、白模、绿幕或试拍。一次延长、约55秒预留转换、固定区域≤60秒、截图仅内审维护于[接续规则](memories/seedance_workflow/continuity_and_review.md#generation-choice)，是当前制作约束。用户俯视站位图按[空间规则](memories/seedance_workflow/execution_rules.md#space)使用，不自行增制图。
 
-按[模板](memories/seedance_workflow/prompt_template.md)保留制作设置、角色映射、七栏/可选栏、逐镜、摄影、现场对白、目标语言和无BGM。按已设计场面分别写连续声音和真实切镜，再交叉核对；不将逐句音频区间复制成逐镜区间。原轨含旁白与台词：现场对白替换原台词，旁白后期编排，不重复加算对白。以实际原轨总长为目标，整集预算、当集上限及锁定节点共同约束；取整和可裁余量计入提交总预算，必要增量按[唯一时间政策](memories/seedance_workflow/execution_rules.md#sound-and-time)处理。时间对应留分段／制作设置，正文不放后期调度。
+按[模板](memories/seedance_workflow/prompt_template.md)保留制作设置、角色映射、七栏/可选栏、逐镜、摄影、现场对白、目标语言和无BGM。按已设计场面分别写连续声音和真实切镜，再交叉核对；不将逐句音频区间复制成逐镜区间。原轨含旁白与台词：现场对白替换原台词，旁白后期编排，不重复加算对白。完整覆盖实际原轨，整集生成素材额外保留6—10秒可剪余量（至少6秒，取整计入，不是每段加）；当集最新额度与锁定节点仍有效，计算与分配只按[唯一时间政策](memories/seedance_workflow/execution_rules.md#sound-and-time)处理。时间对应留分段／制作设置，正文不放后期调度。
 
-写入项目`prompts/`并更新索引；当前正式稿、真实素材、方式、整数时长、可执行条件及实际回执沿用[交付与续做](memories/seedance_workflow/continuity_and_review.md#execution-handoff)分工，供用户及未来网页层消费。聊天默认给链接、变化、缺项与必要风险，用户要全文或未建项目才内联。审核先修画面，台词本身被拒才交用户决定，不自行改词。
+写入项目`prompts/`并更新索引；当前正式稿、真实素材、方式、整数时长、可执行条件及实际回执沿用[交付与续做](memories/seedance_workflow/continuity_and_review.md#execution-handoff)分工，供用户及网页填稿层消费。用户指定网页填写时才读[剧梦填稿技能](extensions/seedance-jumeng-operator/SKILL.md)：V3.5只填稿、真实图片／已就绪视频绑定及参数回读，不点击生成、不付费提交、不实操完整延长选源／区间；后者留V3.6。聊天默认给链接、变化、缺项与必要风险，用户要全文或未建项目才内联。审核先修画面，台词本身被拒才交用户决定，不自行改词。
 
 ## 6. 状态与知识维护
 

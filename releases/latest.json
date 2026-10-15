@@ -1,12 +1,12 @@
 {
   "package_name": "Seedance_Codex_Workflow_Core",
-  "version": "1.4.0",
-  "release_date": "2026-10-14",
+  "version": "1.5.0",
+  "release_date": "2026-10-15",
   "release_status": "prerelease",
   "update_policy": "manual_only_when_user_requests",
-  "archive": "Seedance_Codex_Workflow_Core_v1.4.0_2026-10-14.zip",
-  "sha256": "27fc5772353aedcb18d95de4116251d5e4a470059ed85bd92b32f40e554255f1",
-  "file_count": 34,
-  "markdown_count": 27,
-  "uncompressed_bytes": 401992
+  "archive": "Seedance_Codex_Workflow_Core_v1.5.0_2026-10-15.zip",
+  "sha256": "ba9b1970004be4ac50847844dfaafbffe926f0752d283166017e3c9996e56756",
+  "file_count": 39,
+  "markdown_count": 32,
+  "uncompressed_bytes": 451241
 }

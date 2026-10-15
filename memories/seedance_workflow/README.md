@@ -25,4 +25,6 @@
 
 [本机音频定位工具](../../tools/local_audio/README.md)服务目标集的实际定位与同音频缓存复用；归属由剧本语境核定。候选、内部核查、采用来源和实际听检分开；未实际播放不声称听检或精度通过，旧人工参考路径仍可兼容。当前能力与待实片验证边界见[路线图](../../ROADMAP.md)。
 
-V3.4先据剧本设计[冲突场面](director_os.md#conflict-staging)，再按[声音跨镜](execution_rules.md#audio-shot-independence)转译镜头与连续声轨。可计算检查见[提示词检查工具](../../tools/prompt_review/README.md)，不接管拍法或认证画面质量；匿名验收及未验证边界见[本版说明](../../validation/director_v34.md)。
+V3.5先据剧本设计[冲突场面](director_os.md#conflict-staging)，再按[声音跨镜](execution_rules.md#audio-shot-independence)转译镜头与连续声轨。可计算检查见[提示词检查工具](../../tools/prompt_review/README.md)，不接管拍法或认证画面质量；匿名验收及未验证边界见[本版说明](../../validation/director_v35.md)。
+
+[整集可剪素材政策](execution_rules.md#sound-and-time)唯一维护A／G／R与6—10秒，按[协作职责](director_os.md#collaboration)汇合完整输入。用户指定网页任务才加载[唯一填稿扩展](../../extensions/seedance-jumeng-operator/SKILL.md)，V3.5只填与回读，不生成；完整延长操作留V3.6。

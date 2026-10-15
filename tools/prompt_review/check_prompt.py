@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Read-only checks on the existing Markdown prompt, not a visual-quality grader."""
 import argparse
+from decimal import Decimal, InvalidOperation, ROUND_CEILING, ROUND_FLOOR
 import json
 import math
 from pathlib import Path
@@ -11,17 +12,94 @@ RANGE = rf'({NUM})\s*[–—-]\s*({NUM})\s*秒'
 SHOT = re.compile(rf'^镜头\s*(\d+)【\s*{RANGE}[^\n]*', re.M)
 
 
-def inspect(text, max_shot_seconds=3.0):
+def assess_episode_budget(episode=None, base_dir=None):
+    """Check only the explicitly supplied current segments; never discover history."""
+    if episode is None:
+        return {'status': 'not_assessed', 'detail': 'budget not assessed'}
+    if not isinstance(episode, dict) or set(episode) != {'audio_seconds', 'segments'}:
+        raise ValueError('episode budget requires only audio_seconds and segments')
+    audio = episode['audio_seconds']
+    if isinstance(audio, bool) or not isinstance(audio, (int, float, Decimal)):
+        raise ValueError('audio_seconds must be a finite positive number')
+    try:
+        audio = Decimal(str(audio))
+    except InvalidOperation as exc:
+        raise ValueError('audio_seconds must be a finite positive number') from exc
+    if not audio.is_finite() or audio <= 0:
+        raise ValueError('audio_seconds must be a finite positive number')
+    segments = episode['segments']
+    if not isinstance(segments, list) or not segments:
+        raise ValueError('segments must be a nonempty list of unique current prompt paths')
+    seen, total = set(), 0
+    base = Path(base_dir or Path.cwd())
+    for segment in segments:
+        if not isinstance(segment, dict) or set(segment) != {'path', 'mode', 'seconds'}:
+            raise ValueError('each segment requires only path, mode and seconds; source lengths and retries are excluded')
+        path = segment['path']
+        if not isinstance(path, str) or not path.strip() or any(c in path for c in '*?[]'):
+            raise ValueError('segment path must be explicit, not a glob')
+        resolved = (base / path).resolve()
+        if resolved in seen:
+            raise ValueError(f'duplicate current segment path: {path}')
+        seen.add(resolved)
+        if segment['mode'] not in ('native', 'extension'):
+            raise ValueError('segment mode must be native or extension')
+        seconds = segment['seconds']
+        if type(seconds) is not int or seconds <= 0:
+            raise ValueError('segment seconds must be a positive integer; extension means newly added seconds')
+        total += seconds
+    reserve = Decimal(total) - audio
+    minimum = int((audio + 6).to_integral_value(rounding=ROUND_CEILING))
+    maximum = int((audio + 10).to_integral_value(rounding=ROUND_FLOOR))
+    return {'status': 'assessed', 'budget_pass': 6 <= reserve <= 10,
+            'audio_seconds': float(audio), 'generated_seconds': total,
+            'reserve_seconds': float(reserve),
+            'integer_generated_range': [minimum, maximum],
+            'detail': 'G sums native submissions and extension additions once; excludes source copies and retries'}
+
+
+def inspect_extension_source(body, generation_mode=None):
+    """Text checks cannot establish actual upload nodes, source identity or readiness."""
+    if generation_mode not in (None, 'native', 'extension'):
+        raise ValueError('generation_mode must be native or extension')
+    report = {'status': 'not_assessed', 'source_binding': 'not_assessed',
+              'detail': 'Actual video node, semantic source identity and extension readiness require real evidence'}
+    if generation_mode != 'extension':
+        return report
+    def section(name):
+        match = re.search(r'【' + name + r'】\s*\n(.*?)(?=\n【|\Z)', body, re.S)
+        return match[1] if match else ''
+    refs = re.findall(r'^([^\n：:]+)[：:][ \t]*【?(@视频\d+)】?[^\n]*$',
+                      section('人物与场景参考'), re.M)
+    if len(refs) != 1:
+        return {**report, 'status': 'missing_or_ambiguous',
+                'detail': 'Extension body needs one fixed source name with @视频 in 人物与场景参考'}
+    name, reference = refs[0][0].strip(), refs[0][1]
+    state = re.search(r'^' + re.escape(name) + r'[：:][ \t]*\S[^\n]*$',
+                      section('空间与道具状态'), re.M)
+    return {**report, 'status': 'text_reference_present' if state else 'state_name_missing',
+            'source_name': name, 'video_reference': reference,
+            'detail': ('Text reference and same-name state present; actual binding remains unverified' if state else
+                       '空间与道具状态 needs the identical fixed source name and a state description')}
+
+
+def inspect(text, max_shot_seconds=3.0, generation_mode=None):
     if not math.isfinite(max_shot_seconds) or max_shot_seconds <= 0:
         raise ValueError('max_shot_seconds must be finite and positive')
+    source_reference = inspect_extension_source('', generation_mode)
     errors, warnings, rows = [], [], []
     def issue(target, code, detail):
         target.append({'code': code, 'detail': detail})
     blocks = re.findall(r'```text\s*\n(.*?)```', text, re.S)
     blocks = [b for b in blocks if '【生成任务】' in b and '【镜头设计】' in b]
     if len(blocks) != 1:
-        return {'structural_pass': False, 'errors': [{'code': 'body_count', 'detail': '需要唯一可复制text正文'}], 'warnings': [], 'shots': [], 'visual_quality': 'not_assessed'}
+        return {'structural_pass': False, 'errors': [{'code': 'body_count', 'detail': '需要唯一可复制text正文'}], 'warnings': [], 'shots': [], 'visual_quality': 'not_assessed', 'source_continuity': 'not_assessed',
+                'episode_budget': assess_episode_budget(), 'source_reference': source_reference,
+                'declared_generation_seconds': None}
     body = blocks[0]
+    source_reference = inspect_extension_source(body, generation_mode)
+    if generation_mode == 'extension' and source_reference['status'] != 'text_reference_present':
+        issue(errors, 'extension_source_reference', source_reference['detail'])
     duration = re.search(rf'生成\s*({NUM})\s*秒', body)
     count = re.search(r'共\s*(\d+)\s*个?\s*(?:真实)?镜(?:头)?', body)
     matches = list(SHOT.finditer(body))
@@ -68,16 +146,48 @@ def inspect(text, max_shot_seconds=3.0):
     if '特写' not in body:
         issue(warnings,'inspect_visual_scale','无明确特写用语；人工判断转折是否看清，禁止凑关键词')
     return {'structural_pass':not errors,'errors':errors,'warnings':warnings,'shots':rows,
-            'visual_quality':'not_assessed','source_continuity':'not_assessed'}
+            'visual_quality':'not_assessed','source_continuity':'not_assessed',
+            'episode_budget': assess_episode_budget(), 'source_reference': source_reference,
+            'declared_generation_seconds': float(duration[1]) if duration else None}
 
 
 def main():
     parser=argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('files',nargs='+',type=Path)
+    parser.add_argument('files', nargs='*', type=Path)
     parser.add_argument('--max-shot-seconds',type=float,default=3.0,help='当前用户快节奏任务为3秒；其他题材传实际上限')
+    parser.add_argument('--mode', choices=('native', 'extension'), help='显式生成方式；整集输入时使用每段mode')
+    parser.add_argument('--episode-budget', type=Path, help='显式A及唯一当前各段path/mode/seconds的JSON；不扫描历史')
     args=parser.parse_args()
-    reports=[{'file':str(p),**inspect(p.read_text(),args.max_shot_seconds)} for p in args.files]
-    print(json.dumps(reports,ensure_ascii=False,indent=2))
-    raise SystemExit(0 if all(r['structural_pass'] for r in reports) else 1)
+    try:
+        budget = assess_episode_budget()
+        modes = {}
+        files = args.files
+        if args.episode_budget:
+            if args.mode:
+                raise ValueError('--mode cannot override explicit episode segment modes')
+            episode = json.loads(args.episode_budget.read_text())
+            base = args.episode_budget.resolve().parent
+            budget = assess_episode_budget(episode, base)
+            current = [(base / s['path']).resolve() for s in episode['segments']]
+            if files and ([p.resolve() for p in files] != current):
+                raise ValueError('positional files must exactly match the explicit current segment paths and order')
+            files = current
+            modes = {p: s['mode'] for p, s in zip(current, episode['segments'])}
+        if not files:
+            raise ValueError('supply prompt files or --episode-budget')
+        reports=[{'file':str(p),**inspect(p.read_text(), args.max_shot_seconds,
+                                        modes.get(p, args.mode))} for p in files]
+        if args.episode_budget:
+            for report, segment in zip(reports, episode['segments']):
+                if report['declared_generation_seconds'] != segment['seconds']:
+                    report['errors'].append({'code': 'submission_duration_mismatch',
+                                             'detail': '正文生成秒数与显式提交/延长新增秒数不一致'})
+                    report['structural_pass'] = False
+    except (ValueError, OSError) as exc:
+        parser.error(str(exc))
+    output = {'prompts': reports, 'episode_budget': budget} if args.episode_budget else reports
+    print(json.dumps(output,ensure_ascii=False,indent=2))
+    raise SystemExit(0 if all(r['structural_pass'] for r in reports)
+                     and budget.get('budget_pass', True) else 1)
 
 if __name__=='__main__': main()

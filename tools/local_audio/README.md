@@ -2,7 +2,7 @@
 
 V3.2 的正常入口是完整剧本、目标集完整 MP3/WAV 和实际资产。GPT通读后提取目标集，核定旁白／对白、说话者、直接听者和顺序，再调用现有本机工具；不要求用户做绿标、人工时码、单集拆解Word或填写JSON。语言和平台范围仍是已测 Apple silicon Mac 英文 MLX Whisper，不泛称全部语言或设备已验证。
 
-工具给出候选及匹配证据，GPT内部核对内容、归属和边界。默认**验证模式**随导演解读、画面设计和分段集中审核一次，用户明确整体回复同时记录音频采用；不会再追加音频审批。用户以后认可流程与实片效果、明确启用并落盘**常规模式**后，才允许GPT内部核查采用。版本发布、沉默、单独工具检查都不启用常规模式。采用、用户方案认可、实际听检和生成效果分别记录。
+工具给出候选及匹配证据，GPT内部核对内容、归属和边界。默认**验证模式**随导演解读、画面设计和分段集中审核一次，用户明确整体回复同时记录音频采用；不会再追加音频审批。用户已明确本任务自主制作时，真实授权与范围落盘后允许该范围内部核查采用；用户以后认可流程与实片效果、明确启用并落盘**长期常规模式**后，后续按其范围采用。版本发布、沉默、单独工具检查都不启用常规模式。采用、用户方案认可、实际听检和生成效果分别记录。
 
 ## 环境
 
@@ -47,7 +47,7 @@ GPT以剧本语境确定归属，写入既有JSON接口；引号仅辅助句段�
 
 `historical_seconds` 兼容原样保存作比较，不能强制匹配或沿用旧分段。旁白段首、对白组、生成局部和剪辑时间分开；工具不替GPT决定段数。
 
-## 核查、一次整体确认与未来常规模式
+## 核查、一次整体确认与授权内部采用
 
 首次输出 `result.json`、`review.md`、关键短段和两个未完成模板：`internal_review_request.json` 的 `checked:false` 与 `candidate_confirmation_request.json` 的 `confirmed:false`。GPT先处理低置信、短句、重复和边界问题，能内部查清的不交用户作业；确实不能判断且影响执行才指出局部疑点。
 
@@ -72,18 +72,18 @@ GPT核查后在结果目录外保存 `--internal-review-json` 记录：
 
 确认绑定音频文件及 `audio_content_identity_sha256`，不把候选时码抄成独立参考。通过来源是 `user_overall_confirmation`，`user_confirmation_recorded` 保存真实事实，`scheme_approval` 只描述该次原始整体回复的范围。候选未确认与核查未完成分别显示，不合并为实片通过。
 
-未来常规模式通过 `--production-mode-json` 读取已落盘授权，至少包含：
+内部采用通过 `--production-mode-json` 读取已落盘授权，至少包含：
 
 ```json
 {
   "mode": "routine", "basis": "user_explicit", "authorized": true,
   "project_scope": "current_project",
-  "authorization_source": "<用户实际启用常规模式的消息来源>",
-  "authorization_note": "<用户认可正常流程与实片效果后明确启用的真实摘要>"
+  "authorization_source": "<用户本任务自主或长期常规授权的实际来源>",
+  "authorization_note": "<真实授权原话与范围；当集自主不记成长期认可>"
 }
 ```
 
-范围须与内部核查相同。没有模式记录默认为验证；内部核查文件本身不改变模式。已授权常规模式通过后来源是 `gpt_internal_review`、状态 `internally_adopted_candidates`，不写 `user_explicit` 音频确认、不伪造回复，也不记当前导演方案已获用户认可。模式授权持久保存在现有项目状态关联记录中，后续同范围新窗口读取它，不逐集重问；默认启用仍等待用户实际认可。
+接口`mode:routine`可承载明确的当集自主授权或长期常规：用project_scope限定当前任务，authorization_source/note记录真实范围和原话，并在项目状态明确是否启用长期；不能用机器字段推断用户满意或长期授权。范围须与内部核查相同。没有模式记录默认为验证；内部核查文件本身不改变模式。已授权常规模式通过后来源是 `gpt_internal_review`、状态 `internally_adopted_candidates`，不写 `user_explicit` 音频确认、不伪造回复，也不记当前导演方案已获用户认可。模式授权持久保存在现有项目状态关联记录中，后续同范围新窗口读取它，不逐集重问；长期常规默认启用仍等待用户实际认可；本任务自主分支只依据该任务明确授权。
 
 测试记录的 `basis:test_simulation` 只用于受控演练；任一采用环节是模拟都保持 `automatic_pass:false`、真实用户确认和方案认可为false，只有 `simulated_adoption_pass:true`。不能将单测fixture或模拟回复写进真实项目采用页。
 
