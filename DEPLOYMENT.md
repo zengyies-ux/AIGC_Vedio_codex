@@ -4,9 +4,9 @@
 
 ## 先辨版本与目录
 
-仓库：https://github.com/zengyies-ux/AIGC_Vedio_codex 。当前明确推荐的发行包是[Core1.7.1](https://github.com/zengyies-ux/AIGC_Vedio_codex/releases/tag/core-v1.7.1)，标签`core-v1.7.1`。本版已正式发布；当前Mac环境有真实整集自动链与用户认可，Windows x64 CPU提供部署和适配预览，真机完整流程仍待验证。发布状态不等于所有平台均已验收。
+仓库：https://github.com/zengyies-ux/AIGC_Vedio_codex 。当前明确推荐的发行包是[Core1.7.2](https://github.com/zengyies-ux/AIGC_Vedio_codex/releases/tag/core-v1.7.2)，标签`core-v1.7.2`。本版已正式发布；当前Mac环境有真实整集自动链与用户认可，Windows x64 CPU提供部署和适配预览，真机完整流程仍待验证。发布状态不等于所有平台均已验收。
 
-- 从明确标签`core-v1.7.1`读取`packaging/package_config.json`、`releases/latest.json`及本部署说明，下载Release专用核心ZIP与同名SHA文件。包名应为`Seedance_Codex_Workflow_Core_v1.7.1_2026-10-16.zip`，内容版本与清单须一致。记录实际tag提交与哈希，不把候选分支或未核的latest自动当推荐版。
+- 从明确标签`core-v1.7.2`读取`packaging/package_config.json`、`releases/latest.json`及本部署说明，下载Release专用核心ZIP与同名SHA文件。包名应为`Seedance_Codex_Workflow_Core_v1.7.2_2026-10-16.zip`，内容版本与清单须一致。记录实际tag提交与哈希，不把候选分支或未核的latest自动当推荐版。
 - `main`保留历史代码；默认首页只作当前发布导航。不要clone旧main后直接运行旧规则，也不使用GitHub自动生成的Source code ZIP作为团队制作包。源码开发目录与干净Core制作目录分开；候选版只有用户明确要求才使用。
 - 用户没给安装目录时，在本机文档目录选清楚命名的新目录；已有项目不得覆盖。Windows路径使用本机实际盘符与反斜杠，含空格路径正确引用，不要求用户改成Unix路径或手工设置PATH。
 
@@ -21,7 +21,7 @@
 
 ## 自动准备与自检范围
 
-先读[音频工具说明](tools/local_audio/README.md)。V3.7／Core1.7.1保留已验Mac arm64英文MLX，提供Windows x64英文CPU预览适配（faster-whisper1.2.1／CTranslate2 4.8.3／int8）。两平台用各自Python3.12锁文件，模型／转写缓存分后端，用户项目与原音轨不动。Windows候选已有实现和宿主验证，仍须真机验收，不能称全平台稳定。
+先读[音频工具说明](tools/local_audio/README.md)。V3.7／Core1.7.2保留已验Mac arm64英文MLX，提供Windows x64英文CPU预览适配（faster-whisper1.2.1／CTranslate2 4.8.3／int8）。两平台用各自Python3.12锁文件，模型／转写缓存分后端，用户项目与原音轨不动。Windows候选已有实现和宿主验证，仍须真机验收，不能称全平台稳定。
 
 Codex先定位Python3.12；Windows优先用`py -3.12`，Mac优先已有项目环境或`python3.12`。缺少时由Codex通过本机可用的官方／常规渠道准备独立运行时，例如Windows可用winget的`Python.Python.3.12`用户安装；安装后重新定位实际解释器，用户只处理必要正常系统弹窗。不改系统Python或要求用户手配环境。
 

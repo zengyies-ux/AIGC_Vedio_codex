@@ -1,8 +1,8 @@
 {
   "package_name": "Seedance_Codex_Workflow_Core",
-  "version": "1.7.1",
+  "version": "1.7.2",
   "release_date": "2026-10-16",
   "update_policy": "manual_only_when_user_requests",
-  "summary": "V3.7团队上手版：新增Windows优先的三步SOP与集数／状态资产命名示例，完整通用启动词纳入核心；更新专业首页、明确标签部署和升级入口。现有Mac环境真实整集自动原生—等待—核源—延长已完成并获用户认可；Windows x64 CPU部署／适配已提供，真机完整流程仍待验证。保留只准备与明确生成授权、未知不重提、不出图；不改生成引擎或旧作品。",
+  "summary": "V3.7入口清理补丁：发布快照已删除旧团队专项SOP目录，首页、部署和SOP导航统一指向core-v1.7.2，避免已删除目录仍从旧标签出现。保留1.7.1全部制作能力、完整启动词、Windows优先SOP、23项Windows依赖与固定模型；不改生成或音频算法。Mac已有真实整集案例，Windows真机待验。",
   "release_status": "release"
 }

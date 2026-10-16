@@ -2,7 +2,7 @@
 
 这里保存用户明确要求发布的干净核心学习包。
 
-**当前正式发布：[Core1.7.1](https://github.com/zengyies-ux/AIGC_Vedio_codex/releases/tag/core-v1.7.1)**。Windows优先SOP及完整启动词已入包；当前Mac整集真实链获用户认可，Windows x64适配已提供、真机待验。以下各版本说明均为历史时点。
+**当前正式发布：[Core1.7.2](https://github.com/zengyies-ux/AIGC_Vedio_codex/releases/tag/core-v1.7.2)**。Windows优先SOP及完整启动词已入包；当前Mac整集真实链获用户认可，Windows x64适配已提供、真机待验。以下各版本说明均为历史时点。
 
 - `latest.json`记录当前版本、文件名、文件数、体积和SHA-256。
 - 同名`.zip.sha256`用于校验压缩包完整性。
@@ -26,3 +26,5 @@ Core1.6.0（2026-10-15）为V3.6本地候选，未推送／标签或GitHub Relea
 Core1.6.1（2026-10-15）是V3.6工作分支候选，修资产阶段适配放行、必要局部核源／待源续做与Codex部署入口；只推codex/director-v3-6供审查，未创建本版tag／Release，不能当稳定发布。latest.json现表示1.6.1候选构建，历史各版本段落记录当时发布状态；1.6.0旧ZIP及全部旧发行物保持。默认main仍旧备份，当前公开Release入口仍core-v1.5.1（prerelease）。[唯一部署说明](../DEPLOYMENT.md)区分发布包、分支候选、制作目录及受支持环境；[匿名验收](../validation/director_v36.md)列已验与待验。
 
 Core1.7.0（2026-10-16）为V3.7工作分支候选，包含可恢复执行规程／轻量回执日志、三入口、Windows x64 CPU音频及环境自检；保跨集独立、不出图、提交前设秒、模式保护等主线修正。只推codex/director-v3-7供验收，无本版tag／Release，不改main及旧发行物；latest.json是候选构建信息。Mac／CPU宿主与模拟通过不等于Windows或生产整链通过，边界见[本版说明](../validation/director_v37.md)，部署沿[唯一说明](../DEPLOYMENT.md)。
+
+Core1.7.2（2026-10-16）仅修复发布快照与默认导航仍展示旧SOP的问题：新标签不含旧团队目录，当前链接统一指向本版；1.7.1及历史记录保留，不更改音频／生成行为。

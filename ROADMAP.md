@@ -2,7 +2,7 @@
 
 当前制作以[AGENTS.md](AGENTS.md)及用户本次要求为准。本页记录能力与待验，不添加制作步骤。
 
-## 当前发布：V3.7／Core1.7.1
+## 当前发布：V3.7／Core1.7.2
 
 [三步SOP](QUICK_START.md)面向Windows组员；[完整启动词](NEW_PROJECT_CONVERSATION_PROMPT.md)接入原材料、已有采用设计或正式稿。用户提供已剪好气口的完整音轨、剧本、真实资产与可选想法，Codex承担剩余流程，不自行出图。
 

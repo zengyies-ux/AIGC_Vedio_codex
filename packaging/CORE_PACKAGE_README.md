@@ -1,4 +1,4 @@
-# Seedance Codex Workflow Core 1.7.1
+# Seedance Codex Workflow Core 1.7.2
 
 V3.7团队上手发行包，包含规则、完整启动词、简明SOP、本机音频工具与网页执行技能；不含真实剧本、素材、音频、成片或账号。
 

@@ -10,7 +10,7 @@
 
 默认验证模式：新解读、分段/候选位置一次整体审核后出正式稿，已有采用阶段直接继承，不追加审批。用户明确授权当集自主制作时，在该范围内部核查后直接出稿并落盘授权，不因升级失效，也不据此启用全局常规模式；自主前置与网页准备／生成授权分别记录，见[交付与续做](memories/seedance_workflow/continuity_and_review.md#execution-handoff)。用户认可流程/效果并落盘启用常规模式后，内部核查采用出稿；沉默、文档验收或发布不切模式。资产缺失、输入冲突或无法内解问题才问，少确认不省设计。
 
-当前V3.7／Core1.7.1发行版；各平台实测范围见[部署说明](DEPLOYMENT.md)。先据剧本设计场面与力度，再转译镜头／声音，最后核技术。有明确人物冲突时，主动设计有力度的肢体对抗，并拍清对手、在场者及环境的因果反应；细则唯一见[冲突场面](memories/seedance_workflow/director_os.md#conflict-staging)。声音连续，按行动与回应切镜；长台词跨镜，见[声音跨镜](memories/seedance_workflow/execution_rules.md#audio-shot-independence)。
+当前V3.7／Core1.7.2发行版；各平台实测范围见[部署说明](DEPLOYMENT.md)。先据剧本设计场面与力度，再转译镜头／声音，最后核技术。有明确人物冲突时，主动设计有力度的肢体对抗，并拍清对手、在场者及环境的因果反应；细则唯一见[冲突场面](memories/seedance_workflow/director_os.md#conflict-staging)。声音连续，按行动与回应切镜；长台词跨镜，见[声音跨镜](memories/seedance_workflow/execution_rules.md#audio-shot-independence)。
 
 从原材料开始的同类完整单集默认A剧本／冲突、B声音／时间、C资产／空间三名GPT-6.1-sol high协作，主控统一设计与采用；沿用采用设计、自带正式稿、小修或用户指定单智能体不强制三代理，容量不可用不无限重试，见[协作职责](memories/seedance_workflow/director_os.md#collaboration)。
 
