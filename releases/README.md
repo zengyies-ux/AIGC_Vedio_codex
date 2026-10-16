@@ -22,3 +22,5 @@ Core 1.5.1（2026-10-15）为[V3.5独立原生段多卡填稿补验补丁](https
 Core1.6.0（2026-10-15）为V3.6本地候选，未推送／标签或GitHub Release；`latest.json`表示本机构建，不表示远端发布。两条延长准备已实测，新增秒数重访回5后恢复、只当前同页正确；未生成或验证延长成片。详见[匿名说明](../validation/director_v36.md)，此前公开点仍core-v1.5.1，旧发行物不覆盖。
 
 Core1.6.1（2026-10-15）是V3.6工作分支候选，修资产阶段适配放行、必要局部核源／待源续做与Codex部署入口；只推codex/director-v3-6供审查，未创建本版tag／Release，不能当稳定发布。latest.json现表示1.6.1候选构建，历史各版本段落记录当时发布状态；1.6.0旧ZIP及全部旧发行物保持。默认main仍旧备份，当前公开Release入口仍core-v1.5.1（prerelease）。[唯一部署说明](../DEPLOYMENT.md)区分发布包、分支候选、制作目录及受支持环境；[匿名验收](../validation/director_v36.md)列已验与待验。
+
+Core1.7.0（2026-10-16）为V3.7工作分支候选，包含可恢复执行规程／轻量回执日志、三入口、Windows x64 CPU音频及环境自检；保跨集独立、不出图、提交前设秒、模式保护等主线修正。只推codex/director-v3-7供验收，无本版tag／Release，不改main及旧发行物；latest.json是候选构建信息。Mac／CPU宿主与模拟通过不等于Windows或生产整链通过，边界见[本版说明](../validation/director_v37.md)，部署沿[唯一说明](../DEPLOYMENT.md)。

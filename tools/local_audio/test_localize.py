@@ -90,8 +90,8 @@ class MatchingTests(unittest.TestCase):
             localize.save(destination, dict(settings=settings, transcript=heard,
                 transcript_sha256=localize.transcript_sha(heard)))
             with patch.object(localize, "configured_versions", return_value={"test": "1"}):
-                original, timing = localize.get_transcript(pcm, cache)
-                revised, again = localize.get_transcript(pcm, cache)
+                original, timing = localize.get_transcript(pcm, cache, backend="mlx")
+                revised, again = localize.get_transcript(pcm, cache, backend="mlx")
             self.assertTrue(timing["transcript_cache_hit"])
             self.assertTrue(again["transcript_cache_hit"])
             a = localize.match_units([{"id": "a", "text": "She smiled."}], original)
@@ -103,7 +103,7 @@ class MatchingTests(unittest.TestCase):
             localize.save(destination, corrupted)
             with patch.object(localize, "configured_versions", return_value={"test": "1"}):
                 with self.assertRaisesRegex(ValueError, "checksum mismatch"):
-                    localize.get_transcript(pcm, cache)
+                    localize.get_transcript(pcm, cache, backend="mlx")
 
     def test_word_schema_rejects_nan_negative_and_nonmonotone_times(self):
         for value in [float("nan"), -1, 3]:

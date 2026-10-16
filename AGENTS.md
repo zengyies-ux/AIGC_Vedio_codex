@@ -6,13 +6,13 @@
 
 把剧本、可选想法和真实素材转成自然、可执行的视频提示词：忠实事件，人物、空间、动作、道具与声音连续，情绪与记忆点可读。
 
-输入：完整剧本、目标集数、该集完整MP3/WAV、已有资产图、可选想法；不要求用户制作单集Word、绿标、人工时码或逐镜画面。连续前置：全剧通读/目标集提取 → GPT定说听人、本机定位/核看资产 → 完整原轨覆盖＋可剪余量下解读、设计/分段 → 内部核查 → 提示词 → 返修。见[导演流程](memories/seedance_workflow/director_os.md#workflow-stages)。
+输入：完整剧本、目标集数、该集完整MP3/WAV、已有资产图、可选想法；不要求用户制作单集Word、绿标、人工时码或逐镜画面。本制作流程不自行生成或重绘资产图，不另写图片生成提示词；必要缺图由用户补齐。按现有材料自然接入：从原材料开始完成前置；已有采用解读／分段则保留设计、补齐剩余；已有正式稿则直接网页准备／续做。AI识别阶段，不让用户选菜单或补内部表。完整前置及各入口见[导演流程](memories/seedance_workflow/director_os.md#workflow-stages)。
 
-默认验证模式：解读、分段/候选位置一次整体审核后出正式稿，不追加审批。用户明确授权当集自主制作时，在该范围内部核查后直接出稿并落盘授权，不因升级失效，也不据此启用全局常规模式。用户认可流程/效果并落盘启用常规模式后，内部核查采用出稿；沉默、文档验收或发布不切模式。资产缺失、输入冲突或无法内解问题才问，少确认不省设计。
+默认验证模式：新解读、分段/候选位置一次整体审核后出正式稿，已有采用阶段直接继承，不追加审批。用户明确授权当集自主制作时，在该范围内部核查后直接出稿并落盘授权，不因升级失效，也不据此启用全局常规模式；自主前置与网页准备／生成授权分别记录，见[交付与续做](memories/seedance_workflow/continuity_and_review.md#execution-handoff)。用户认可流程/效果并落盘启用常规模式后，内部核查采用出稿；沉默、文档验收或发布不切模式。资产缺失、输入冲突或无法内解问题才问，少确认不省设计。
 
-当前V3.6候选版。先据剧本设计场面与力度，再转译镜头／声音，最后核技术。有明确人物冲突时，主动设计有力度的肢体对抗，并拍清对手、在场者及环境的因果反应；细则唯一见[冲突场面](memories/seedance_workflow/director_os.md#conflict-staging)。声音连续，按行动与回应切镜；长台词跨镜，见[声音跨镜](memories/seedance_workflow/execution_rules.md#audio-shot-independence)。
+当前V3.7候选版。先据剧本设计场面与力度，再转译镜头／声音，最后核技术。有明确人物冲突时，主动设计有力度的肢体对抗，并拍清对手、在场者及环境的因果反应；细则唯一见[冲突场面](memories/seedance_workflow/director_os.md#conflict-staging)。声音连续，按行动与回应切镜；长台词跨镜，见[声音跨镜](memories/seedance_workflow/execution_rules.md#audio-shot-independence)。
 
-同类完整单集默认A剧本／冲突、B声音／时间、C资产／空间三名GPT-6.1-sol high协作，主控统一设计与采用；小修或用户指定单智能体不凑代理，容量不可用不无限重试，见[协作职责](memories/seedance_workflow/director_os.md#collaboration)。
+从原材料开始的同类完整单集默认A剧本／冲突、B声音／时间、C资产／空间三名GPT-6.1-sol high协作，主控统一设计与采用；沿用采用设计、自带正式稿、小修或用户指定单智能体不强制三代理，容量不可用不无限重试，见[协作职责](memories/seedance_workflow/director_os.md#collaboration)。
 
 ## 2. 用户决定与协作边界
 
@@ -39,6 +39,7 @@
 - 继续指定项目：从[项目索引](memories/seedance_workflow/projects/INDEX.md)定位，读 `production_state.md` 中工作模式、当前输入与采用来源；按链接读当前文本、`prompts/INDEX.md`及必要资产。固定设定按需读 `project_overview.md`。
 - 新项目：从[项目模板](memories/seedance_workflow/projects/PROJECT_TEMPLATE.md)建立独立目录；不带入旧角色、剧情和图片编号。
 - 继续继承采用稿，返修保有效部分；独立重测从原始输入设计，不继承旧未采用时轴、预算或补图。新结果独立保存，采用后切入口，见[恢复规则](memories/seedance_workflow/continuity_and_review.md#task-recovery)。接续查实际合格源，不用计划终态代填。
+- 不同集默认以对应角色／阶段／场景资产独立原生制作，不等前集成片或末态；仅用户明确要求跨集连续动作／延长才建立源依赖，见[生成方式](memories/seedance_workflow/continuity_and_review.md#generation-choice)。同集必要接续保留。
 - 只处理指定范围，已读未变规则不重载。
 
 ## 4. 按阶段读取
@@ -71,11 +72,11 @@
 
 每次Seedance只读本次正文和上传素材，正文自包含、可见可听可执行。未来计划、分析、旁白对齐与制作接力留项目文件。人物轻绑定、场景强锚定、关键道具按需控制，参考区和正文用同一固定简名。
 
-当前用公司平台Seedance 2.5全能参考和延长；不默认Fast、白模、绿幕或试拍。一次延长、约55秒预留转换、固定区域≤60秒、截图仅内审维护于[接续规则](memories/seedance_workflow/continuity_and_review.md#generation-choice)，是当前制作约束。用户俯视站位图按[空间规则](memories/seedance_workflow/execution_rules.md#space)使用，不自行增制图。
+当前用公司平台Seedance 2.5全能参考和延长；不默认Fast、白模、绿幕或试拍。一次延长、本集连续演绎约55秒预留转换／固定区域≤60秒、截图仅内审维护于[接续规则](memories/seedance_workflow/continuity_and_review.md#generation-choice)，是当前制作约束；跨集默认独立不继承前集累计。用户俯视站位图按[空间规则](memories/seedance_workflow/execution_rules.md#space)使用，不自行增制图。
 
 按[模板](memories/seedance_workflow/prompt_template.md)保留制作设置、角色映射、七栏/可选栏、逐镜、摄影、现场对白、目标语言和无BGM。按已设计场面分别写连续声音和真实切镜，再交叉核对；不将逐句音频区间复制成逐镜区间。原轨含旁白与台词：现场对白替换原台词，旁白后期编排，不重复加算对白。完整覆盖实际原轨，整集生成素材额外保留6—10秒可剪余量（至少6秒，取整计入，不是每段加）；当集最新额度与锁定节点仍有效，计算与分配只按[唯一时间政策](memories/seedance_workflow/execution_rules.md#sound-and-time)处理。时间对应留分段／制作设置，正文不放后期调度。
 
-写入项目`prompts/`并更新索引；当前正式稿、真实素材、方式、整数时长、可执行条件及实际回执沿用[交付与续做](memories/seedance_workflow/continuity_and_review.md#execution-handoff)分工，供用户及网页层消费。用户指定网页任务才读[剧梦执行技能](extensions/seedance-jumeng-operator/SKILL.md)：V3.6保留原生填稿，一次明确本集原生及所需延长准备授权覆盖该范围；缺源仅相关段待源，通知就绪后由GPT核必要局部末态并续做，细则沿上述交付入口。核真实源、区间、视频槽、正文节点和参数，正常保存回读；不点击生成、批量生成或付费提交，准备不等于生成成功。聊天默认给链接、变化、缺项与必要风险，用户要全文或未建项目才内联。审核先修画面，台词本身被拒才交用户决定，不自行改词。
+写入项目`prompts/`并更新索引；当前正式稿、真实素材、方式、整数时长、可执行条件及实际回执沿用[交付与续做](memories/seedance_workflow/continuity_and_review.md#execution-handoff)分工。用户指定网页任务才读[剧梦执行技能](extensions/seedance-jumeng-operator/SKILL.md)，默认只准备，核真实源、区间、视频槽、正文节点、模式及目标参数后正常保存回读，不以生成测试准备。一次明确本集原生及所需延长准备授权覆盖该范围；明确整集生成授权可覆盖原生提交→等结果→必要局部核源→本集所需的一次延长提交及结果记录，按[完整生成规程](extensions/seedance-jumeng-operator/references/generation-execution.md)执行，不逐段重复问。准备范围内缺源仅相关段待源，通知就绪后由GPT核源续做；准备、提交、生成成功和可用于接续分别记。聊天默认给链接、变化、缺项与必要风险，用户要全文或未建项目才内联。审核先修画面，台词本身被拒才交用户决定，不自行改词。
 
 ## 6. 状态与知识维护
 

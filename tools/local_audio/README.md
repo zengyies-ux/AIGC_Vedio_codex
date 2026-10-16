@@ -1,12 +1,12 @@
 # 本机英文音频定位与采用
 
-V3.2 的正常入口是完整剧本、目标集完整 MP3/WAV 和实际资产。GPT通读后提取目标集，核定旁白／对白、说话者、直接听者和顺序，再调用现有本机工具；不要求用户做绿标、人工时码、单集拆解Word或填写JSON。语言和平台范围仍是已测 Apple silicon Mac 英文 MLX Whisper，不泛称全部语言或设备已验证。
+V3.2 的正常入口是完整剧本、目标集完整 MP3/WAV 和实际资产。GPT通读后提取目标集，核定旁白／对白、说话者、直接听者和顺序，再调用现有本机工具；不要求用户做绿标、人工时码、单集拆解Word或填写JSON。Mac继续使用已测Apple Silicon英文MLX Whisper；V3.7新增Windows x64 CPU英文候选，真机安装／耗时／短集仍待用户验证，不泛称所有设备／语言通过。
 
 工具给出候选及匹配证据，GPT内部核对内容、归属和边界。默认**验证模式**随导演解读、画面设计和分段集中审核一次，用户明确整体回复同时记录音频采用；不会再追加音频审批。用户已明确本任务自主制作时，真实授权与范围落盘后允许该范围内部核查采用；用户以后认可流程与实片效果、明确启用并落盘**长期常规模式**后，后续按其范围采用。版本发布、沉默、单独工具检查都不启用常规模式。采用、用户方案认可、实际听检和生成效果分别记录。
 
 ## 环境
 
-需 Python 3.12、macOS arm64。独立 venv、模型、完整词表和音频短段均放 `.codex_tmp/audio_v3/`，不入 Git。MLX Whisper 官方依赖包含 PyTorch 等包，正常安装依赖；运行转写只使用这一套 MLX 后端。`imageio-ffmpeg` 的 arm64 wheel 内带 decoder，不要求改系统 PATH 或安装 Homebrew。
+Mac路径需Python3.12、macOS arm64。独立 venv、模型、完整词表和音频短段均放 `.codex_tmp/audio_v3/`，不入 Git。MLX Whisper 官方依赖包含 PyTorch 等包，正常安装依赖；运行转写只使用这一套 MLX 后端。`imageio-ffmpeg` 的 arm64 wheel 内带 decoder，不要求改系统 PATH 或安装 Homebrew。
 
 ```sh
 python3.12 -m venv .codex_tmp/audio_v3/venv
@@ -14,6 +14,18 @@ python3.12 -m venv .codex_tmp/audio_v3/venv
 ```
 
 主选模型为 `mlx-community/whisper-small.en-mlx`（英文 small，约 481 MB），固定 revision `52a88bf6e98b114a210c21bb83e22d6e1505cb73`；固定 MLX `0.32.3`、MLX Whisper `0.4.3`、imageio-ffmpeg `0.6.0`。完整已测依赖记录在 lock 文件。首次下载从公开模型仓库读取权重；音频始终在本机解码和转写，不发往外部转写服务。模型文件不进入 Git。
+
+## V3.7自动环境入口与Windows候选
+
+依[唯一部署说明](../../DEPLOYMENT.md)，Codex运行`bootstrap.py`自动辨系统／架构、复用健康Python3.12环境、按对应锁文件准备依赖和模型并自检。用户不需要建立venv、选DLL或改PATH。`--install`允许准备依赖，`--prepare-model`允许固定模型准备；`--audio`给本次已提供真实音轨时才核实际转写。以该入口报告的实际Python路径继续运行；坏环境旁建，旧环境和缓存保留，重复运行只补缺项。
+
+Windows x64默认采用faster-whisper1.2.1／CTranslate2 4.8.3，CPU int8、4线程、单worker；英文small模型`Systran/faster-whisper-small.en`固定revision`d1d751a5f8271d482d14ca55d9e2deeebbae577f`，模型四个必要文件经manifest校验。依赖见`requirements-lock-windows-x64-py312.txt`，不用Mac的MLX锁。CPU适配器接收同一完整16kHz PCM，VAD关闭，不裁静音或平移原点；惰性结果完整消费后才写成功。只更换转写后端，剧本匹配、说听归属、重复／漏词保护和采用政策保持。
+
+默认`--backend auto`在Mac arm64选MLX、Windows x64选CPU；`--backend faster-whisper`供候选定向核验。CPU的backend、模型revision、int8／线程、关键转写参数和依赖版本进入独立缓存键及候选内容身份，不能复用旧后端的采用确认。Mac原默认模型／参数缓存格式及有效采用身份保留；该固定基线以外的模型／参数也产生新身份。CPU模型保存在同缓存的`models/faster-whisper-small-en/`，不会改Mac的`model/`；完整词表仍在本机，缓存命中不导入任何ASR运行时，也不检查非当前后端的MLX依赖。
+
+文本文件明确UTF-8，CLI结果JSON用ASCII转义保留中文语义，避免非UTF-8管道在落盘后报编码失败；运行命令由Codex用参数数组／绝对路径处理中文用户名及空格，不拼接shell命令。Windows文件占用导致替换失败时保留旧有效文件及明确失败，处理占用后续做，不把失败记为完成。当前已解析／下载Windows cp312 x64依赖wheel；真实Windows仍须验证普通账户、中文路径、MP3/WAV、固定模型下载恢复、CPU耗时及浏览器实际操作。Mac主机上的CPU推理只证明后端代码可运行，不是Windows验收。
+
+技术依据：[faster-whisper官方用法](https://github.com/SYSTRAN/faster-whisper)、[CTranslate2安装与Windows运行库](https://opennmt.net/CTranslate2/installation.html)、[固定CPU模型](https://huggingface.co/Systran/faster-whisper-small.en/tree/d1d751a5f8271d482d14ca55d9e2deeebbae577f)。Windows缺少Visual C++ Runtime时由Codex走微软正常安装渠道，必要系统授权交用户；无需用户手配DLL或启用CUDA。
 
 ## 默认输入与运行
 

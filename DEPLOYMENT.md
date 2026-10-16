@@ -4,10 +4,10 @@
 
 ## 先辨版本与目录
 
-仓库：<https://github.com/zengyies-ux/AIGC_Vedio_codex>。2026-10-15核对：默认`main`仍是历史备份；已发布Core入口为[core-v1.5.1](https://github.com/zengyies-ux/AIGC_Vedio_codex/releases/tag/core-v1.5.1)，提交`631bb6a4b7c49116ed66d62948711fa0d314d3d3`，也是prerelease，不称稳定版。当前[V3.6工作分支](https://github.com/zengyies-ux/AIGC_Vedio_codex/tree/codex/director-v3-6)的Core1.6.1为分支候选，未创建对应tag／Release，新一集完整链路待验。
+仓库：<https://github.com/zengyies-ux/AIGC_Vedio_codex>。2026-10-15核对：默认`main`仍是历史备份；已发布Core入口为[core-v1.5.1](https://github.com/zengyies-ux/AIGC_Vedio_codex/releases/tag/core-v1.5.1)，提交`631bb6a4b7c49116ed66d62948711fa0d314d3d3`，也是prerelease，不称稳定版。当前[V3.7工作分支](https://github.com/zengyies-ux/AIGC_Vedio_codex/tree/codex/director-v3-7)的Core1.7.0为分支候选，未创建对应tag／Release，完整自动执行链与Windows真机待验。
 
 - 未指定试候选时，先实时核上述明确tag和Release附件；若状态变化，报告差异并按用户版本意图取包，不能用GitHub“latest”隐式跳过prerelease。当前默认取1.5.1专用核心ZIP及同名SHA文件，**它不包含V3.6延长准备与本次修订**。
-- 用户明确试V3.6候选时，解析`codex/director-v3-6`真实提交，按该提交读取`packaging/package_config.json`、`releases/latest.json`及其中指定的1.6.1核心ZIP／SHA，记录提交、候选状态和文件哈希。候选附件在工作分支`releases/`，不是不存在的core-v1.6.1 Release。
+- 用户明确试V3.7候选时，解析`codex/director-v3-7`真实提交，按该提交读取`packaging/package_config.json`、`releases/latest.json`及其中指定的1.7.0核心ZIP／SHA，记录提交、候选状态和文件哈希。候选附件在工作分支`releases/`，不是不存在的core-v1.7.0 Release。
 - 团队制作目录使用已校验的干净核心包；源码开发目录供修改／打包，不能默认clone旧main或将GitHub自动生成的Source code ZIP整包当制作环境。只取核心ZIP，不导入仓库历史项目。
 
 ## 获取、校验与安装
@@ -21,21 +21,21 @@
 
 ## 自动准备与自检范围
 
-先读[音频工具说明](tools/local_audio/README.md)，复用未变且自检通过的环境／同音轨缓存。当前已验证**Apple Silicon Mac、Python3.12、英文MLX Whisper**；其他系统和语言不能沿用该已验结论。
+先读[音频工具说明](tools/local_audio/README.md)。V3.7保留已验Mac arm64英文MLX，新增Windows x64英文CPU候选（faster-whisper1.2.1／CTranslate2 4.8.3／int8）。两平台用各自Python3.12锁文件，模型／转写缓存分后端，用户项目与原音轨不动。Windows候选已有实现和宿主验证，仍须真机验收，不能称全平台稳定。
 
-Mac arm64由Codex定位已有Python3.12；缺少时在本机允许的常规安装渠道准备独立运行时，正常系统安装授权由用户处理，不修改系统Python。以下从制作根目录执行，已有正确venv不重复创建／安装：
+Codex先定位Python3.12；Windows优先用`py -3.12`，Mac优先已有项目环境或`python3.12`。缺少时由Codex通过本机可用的官方／常规渠道准备独立运行时，例如Windows可用winget的`Python.Python.3.12`用户安装；安装后重新定位实际解释器，用户只处理必要正常系统弹窗。不改系统Python或要求用户手配环境。
 
-```sh
-python3.12 -m venv .codex_tmp/audio_v3/venv
-.codex_tmp/audio_v3/venv/bin/python -m pip install --cache-dir .codex_tmp/audio_v3/pip-cache -r tools/local_audio/requirements-lock-macos-arm64-py312.txt
-.codex_tmp/audio_v3/venv/bin/python -m pip check
-.codex_tmp/audio_v3/venv/bin/python tools/local_audio/localize.py --help
-.codex_tmp/audio_v3/venv/bin/python tools/prompt_review/check_prompt.py --help
+由Codex以找到的Python绝对路径执行（PowerShell路径含空格用调用运算符`&`，Unix路径正常引号）：
+
+```text
+<实际Python3.12> -X utf8 tools/local_audio/bootstrap.py --install --prepare-model
 ```
 
-继而由Codex检查锁定依赖版本、MLX的Metal可用性、`imageio_ffmpeg.get_ffmpeg_exe()`返回decoder的正常启动；不需要用户手改PATH／先装Homebrew。依现有`localize.py`的`model_directory(Path('.codex_tmp/audio_v3'))`准备或校验固定repo／revision及权重manifest，首次约481MB公开模型下载与已有缓存复用分别记录。音频留本机，初次准备不强行转写某个历史项目。解码可用临时短音频自检；模块导入／decoder／权重通过仍不等于真实转写已测，当前新机转写需实际跑过才报通过。
+`bootstrap.py`按系统选择锁文件，健康venv复用，缺依赖补齐，损坏环境旁建后再采用；报告实际`active_python`及恢复阶段。后续用报告的解释器运行工具，不假设它一定在旧默认路径。下载失败保留可恢复缺项，不写成功；Windows文件占用先结束相应占用后重跑，不删除用户原文件／缓存。模型固定repo／revision及manifest，首次下载与缓存复用分开记录。CPU不用CUDA；如导入报Visual C++ Runtime缺失，由Codex走[微软官方运行库](https://learn.microsoft.com/en-us/cpp/windows/latest-supported-vc-redist)正常安装（可用winget的`Microsoft.VCRedist.2015+.x64`），必要系统授权由用户处理，不让用户手配DLL或PATH。
 
-**Windows可以使用Codex**：官方已支持原生PowerShell，也可选WSL2，见[官方Windows说明](https://learn.chatgpt.com/docs/windows/windows-app)。本项目锁定的MLX音频后端目前尚未适配／验收Windows，不在Windows直接执行Mac锁文件，也不把切WSL当MLX已兼容。可自动获取核心、做哈希／文件校验和纯Python入口检查；音频标为“未就绪／本项目待适配”，本机可读资料与无关工作继续。未经真实验证不得报Windows整集全链部署成功；本轮不另造第二套音频后端或完整安装器。
+自检包含依赖版本、运行时导入、内置decoder和临时WAV；`--prepare-model`核固定模型。用户已有本集音轨时，再由Codex加`--audio <真实MP3/WAV绝对路径>`核真实转写、缓存、耗时及词表；不要为部署强行处理历史项目，不把导入／模拟当真实音频通过。正文、JSON及日志使用UTF-8，实际中文用户名／空格路径和Windows占用恢复仍须真机验证。CPU性能按真机记录，不承诺硬件无关速度。
+
+Windows可以原生PowerShell使用Codex，也可选WSL2，见[官方Windows说明](https://learn.chatgpt.com/docs/windows/windows-app)；本候选优先Windows原生x64 CPU。当前核心／音频候选已可部署测试，Windows普通账户安装、模型下载恢复、MP3/WAV短集、CPU资源及网页文件选择／节点／参数恢复留真机验收，不能用Mac通过冒充Windows整链通过。
 
 网页需另核当前宿主提供的真实浏览器连接、正常登录及目标集可读状态。读到`extensions/seedance-jumeng-operator/SKILL.md`只说明技能文本存在；连接未提供或站点拒绝时据实报告，保留恢复点，不绕过。部署自检只读网页，不代用户生成／付费或改项目卡。
 
@@ -49,4 +49,4 @@ python3.12 -m venv .codex_tmp/audio_v3/venv
 | 音频 | 系统／架构／Python、依赖／decoder／Metal／模型是否就绪，实际做过的转写或待适配项 |
 | 浏览器 | 工具是否连接、登录／页面是否可读，未提供URL则未核；不把技能安装当连接成功 |
 
-给出[通用制作启动词及源就绪短续做词](NEW_PROJECT_CONVERSATION_PROMPT.md)，请组员随后只放材料、指定集数和个人想法。记录真实耗时与必要人工介入；未验证项明确留待实际任务，不称完整新机／新一集链路已验收。
+给出[主线维护的制作启动词](NEW_PROJECT_CONVERSATION_PROMPT.md)，请组员随后只放材料、指定集数和个人想法。记录真实耗时与必要人工介入；未验证项明确留待实际任务，不称完整新机／新一集链路已验收。

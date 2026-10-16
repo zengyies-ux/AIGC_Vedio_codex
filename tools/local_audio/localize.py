@@ -17,11 +17,19 @@ import wave
 import xml.etree.ElementTree as ET
 import zipfile
 
+from asr_backends import select_backend
+
 MODEL = "mlx-community/whisper-small.en-mlx"
 REVISION = "52a88bf6e98b114a210c21bb83e22d6e1505cb73"
 PARAMS = dict(language="en", task="transcribe", word_timestamps=True,
               temperature=0.0, condition_on_previous_text=True, verbose=None)
 VERSION = "2"
+# Preserve the already-adopted MLX baseline's identities. Any later model/parameter
+# change gets an explicit identity, as all CPU-backend candidates already do.
+LEGACY_MLX_SPEC = dict(model="mlx-community/whisper-small.en-mlx",
+    revision="52a88bf6e98b114a210c21bb83e22d6e1505cb73",
+    parameters=dict(language="en", task="transcribe", word_timestamps=True,
+                    temperature=0.0, condition_on_previous_text=True, verbose=None))
 MATCHING_NORMALIZATION = "limited_spelling_v1"
 # User-confirmed spelling equivalence only; no fuzzy edits, names or numbers.
 SPELLING_EQUIVALENTS = {"cancelled": "canceled"}
@@ -54,7 +62,7 @@ def save(path: Path, value, protected: list[Path] = ()) -> None:
     temporary = path.with_suffix(path.suffix + ".tmp")
     ensure_no_collisions([path, temporary], protected)
     path.parent.mkdir(parents=True, exist_ok=True)
-    temporary.write_text(json.dumps(value, ensure_ascii=False, indent=2) + "\n")
+    temporary.write_text(json.dumps(value, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     temporary.replace(path)
 
 
@@ -86,7 +94,7 @@ def validate_transcript(transcript: dict, duration: float) -> None:
 
 def read_script(path: Path, episode: int | None) -> list[dict]:
     if path.suffix.lower() == ".json":
-        value = json.loads(path.read_text())
+        value = json.loads(path.read_text(encoding="utf-8"))
         units = value["units"] if isinstance(value, dict) else value
         if not units or any(not u.get("text") or not u.get("id") for u in units):
             raise ValueError("script JSON requires nonempty units with id and text")
@@ -95,7 +103,7 @@ def read_script(path: Path, episode: int | None) -> list[dict]:
         return units
     active = episode is None
     units = []
-    for line_number, line in enumerate(path.read_text().splitlines(), 1):
+    for line_number, line in enumerate(path.read_text(encoding="utf-8").splitlines(), 1):
         match = re.match(r"\[P(\d+)\]\s*(.*)", line)
         unit_id, text = ("P" + match[1], match[2]) if match else (f"L{line_number}", line.strip())
         header = re.fullmatch(r"(?:Episode|EP)\s*(\d+)", text, re.I)
@@ -259,7 +267,7 @@ def model_directory(cache: Path, protected: list[Path] = ()) -> tuple[str, dict]
     ensure_no_collisions([manifest, manifest.with_suffix(".json.tmp"), model / "config.json", model / "weights.npz"], protected)
     started = time.perf_counter()
     if manifest.exists():
-        record = json.loads(manifest.read_text())
+        record = json.loads(manifest.read_text(encoding="utf-8"))
         if record.get("model") != MODEL or record.get("revision") != REVISION:
             raise ValueError("Local model repo/revision mismatch; use a separate cache")
         for name in ("config.json", "weights.npz"):
@@ -279,17 +287,22 @@ def model_directory(cache: Path, protected: list[Path] = ()) -> tuple[str, dict]
         model_first_download_and_integrity_seconds=time.perf_counter() - started)
 
 
-def get_transcript(pcm: bytes, cache: Path, force: bool = False, protected: list[Path] = ()) -> tuple[dict, dict]:
+def get_transcript(pcm: bytes, cache: Path, force: bool = False, protected: list[Path] = (), backend="auto") -> tuple[dict, dict]:
+    if select_backend(backend) == "faster-whisper":
+        from asr_backends import get_transcript as cpu_transcript
+        return cpu_transcript(pcm, cache, force, protected)
     settings = dict(format_version=VERSION, pcm_sha256=digest(pcm),
                     pcm_format="16000 Hz mono s16le", model=MODEL, revision=REVISION,
                     parameters=PARAMS, tool_versions=configured_versions())
+    spec = {key: settings[key] for key in ("model", "revision", "parameters")}
+    identity = {} if spec == LEGACY_MLX_SPEC else {"transcription_identity": {"backend": "mlx", **settings}}
     key = digest(json.dumps(settings, sort_keys=True).encode())
     destination = cache / "transcripts" / (key + ".json")
     ensure_no_collisions([destination, destination.with_suffix(".json.tmp")], protected)
     started = time.perf_counter()
     if destination.exists() and not force:
         try:
-            stored = json.loads(destination.read_text())
+            stored = json.loads(destination.read_text(encoding="utf-8"))
         except (OSError, json.JSONDecodeError) as error:
             raise ValueError("Unreadable cached transcript; explicitly --force-transcribe to regenerate") from error
         if not isinstance(stored, dict):
@@ -300,7 +313,7 @@ def get_transcript(pcm: bytes, cache: Path, force: bool = False, protected: list
         if stored.get("transcript_sha256") != transcript_sha(stored.get("transcript")):
             raise ValueError("Cached transcript checksum mismatch; explicitly --force-transcribe to regenerate")
         return stored["transcript"], dict(transcript_cache_hit=True,
-            transcript_cache_read_seconds=time.perf_counter() - started, cache_key=key, settings=settings)
+            transcript_cache_read_seconds=time.perf_counter() - started, cache_key=key, settings=settings, **identity)
     os.environ["HF_HOME"] = str(cache / "hf-cache")
     os.environ["HF_HUB_DISABLE_TELEMETRY"] = "1"
     os.environ["HF_HUB_DISABLE_XET"] = "1"
@@ -319,7 +332,7 @@ def get_transcript(pcm: bytes, cache: Path, force: bool = False, protected: list
     validate_transcript(transcript, len(pcm) / 32000)
     save(destination, dict(settings=settings, transcript=transcript,
         transcript_sha256=transcript_sha(transcript)), protected)
-    return transcript, dict(transcript_cache_hit=False, cache_key=key, settings=settings,
+    return transcript, dict(transcript_cache_hit=False, cache_key=key, settings=settings, **identity,
         **model_timing, backend_import_seconds=import_seconds, transcribe_seconds=transcribe_seconds,
         cache_miss_total_seconds=time.perf_counter() - started)
 
@@ -392,7 +405,7 @@ def read_reference(path: Path) -> dict:
                 raise ValueError(f"Duplicate reference key: {key}")
             result[key] = value
         return result
-    return json.loads(path.read_text(), object_pairs_hook=unique_keys)
+    return json.loads(path.read_text(encoding="utf-8"), object_pairs_hook=unique_keys)
 
 
 def valid_number(value) -> bool:
@@ -509,13 +522,15 @@ def evaluate_reference(dialogues: list[dict], anchors: list[dict], matched: dict
 
 def make_candidate(audio_sha: str, pcm_sha: str, duration: float, matched: dict,
                    dialogues: list[dict], anchors: list[dict], requested_anchors: list[dict],
-                   warnings: list[str], source_content_hashes: dict) -> dict:
+                   warnings: list[str], source_content_hashes: dict, transcription_identity: dict | None = None) -> dict:
     """Stable complete candidate identity, without paths, runtime or reply data."""
     value = dict(candidate_schema="2", audio_file_sha256=audio_sha, decoded_pcm_sha256=pcm_sha,
                 decoded_duration_seconds=duration, source_origin_seconds=0,
                 source_content_hashes=source_content_hashes, matching=matched,
                 dialogue_groups=dialogues, anchors=anchors, requested_anchors=requested_anchors,
                 warnings=warnings)
+    if transcription_identity is not None:
+        value["transcription_identity"] = transcription_identity
     return json.loads(json.dumps(value, ensure_ascii=False, allow_nan=False))
 
 
@@ -525,6 +540,8 @@ def audio_content_identity(candidate: dict) -> str:
               "source_origin_seconds", "matching", "dialogue_groups"]
     value = {key: candidate[key] for key in fields}
     value["identity_schema"] = "2"
+    if "transcription_identity" in candidate:
+        value["transcription_identity"] = candidate["transcription_identity"]
     value["source_content_hashes"] = {key: sha for key, sha in candidate["source_content_hashes"].items()
                                       if key != "anchors"}
     return transcript_sha(value)
@@ -762,6 +779,7 @@ def main() -> None:
     parser.add_argument("--production-mode-json", type=Path, help="persisted verification mode, or user-authorized routine mode; absent means verification")
     parser.add_argument("--cache", type=Path, default=Path(".codex_tmp/audio_v3"))
     parser.add_argument("--out", type=Path, default=Path(".codex_tmp/audio_v3/result"))
+    parser.add_argument("--backend", choices=["auto", "mlx", "faster-whisper"], default="auto", help="auto: Mac arm64 MLX or Windows x64 CPU candidate")
     parser.add_argument("--force-transcribe", action="store_true", help="performance benchmark only; bypass transcript cache")
     args = parser.parse_args()
     if args.reference_times_json and (args.candidate_confirmation_json or args.internal_review_json or args.production_mode_json):
@@ -788,7 +806,7 @@ def main() -> None:
     else:
         previews = [{**u, "estimated_start": None, "estimated_end": None, "issues": []} for u in units]
         groups = script_dialogue_groups(previews)
-    requested_anchors = json.loads(args.anchors_json.read_text()) if args.anchors_json else []
+    requested_anchors = json.loads(args.anchors_json.read_text(encoding="utf-8")) if args.anchors_json else []
     point_ids = [f"dialogue_{n:02}" for n in range(1, len(groups) + 1)] + [p["id"] for p in requested_anchors]
     if any(not isinstance(label, str) or not label for label in point_ids):
         raise ValueError("Review point ids must be nonempty strings")
@@ -800,7 +818,10 @@ def main() -> None:
     decode_started = time.perf_counter()
     pcm, decoder_version = decode(args.audio)
     decode_seconds = time.perf_counter() - decode_started
-    transcript, timing = get_transcript(pcm, cache, args.force_transcribe, inputs)
+    if args.backend == "auto":
+        transcript, timing = get_transcript(pcm, cache, args.force_transcribe, inputs)
+    else:
+        transcript, timing = get_transcript(pcm, cache, args.force_transcribe, inputs, backend=args.backend)
     transcript_path = cache / "transcripts" / (timing["cache_key"] + ".json") if timing.get("cache_key") else None
     protected_results = inputs + ([transcript_path] if transcript_path else [])
     ensure_no_collisions(planned + clip_outputs, protected_results)
@@ -829,7 +850,8 @@ def main() -> None:
     source_content_hashes = {label: source_hashes[str(path.absolute())] for label, path in
         [("script", args.script), ("dialogue_docx", args.dialogue_docx), ("anchors", args.anchors_json)] if path}
     candidate = make_candidate(source_hashes[str(args.audio.absolute())], digest(pcm),
-        len(pcm) / 32000, matched, dialogues, anchors, requested_anchors, warnings, source_content_hashes)
+        len(pcm) / 32000, matched, dialogues, anchors, requested_anchors, warnings, source_content_hashes,
+        transcription_identity=timing.get("transcription_identity"))
     candidate_confirmation = evaluate_adoption(candidate, confirmation, internal_review, mode_record)
     adoption = reference_comparison if reference is not None else candidate_confirmation
     match_seconds = time.perf_counter() - match_started
@@ -937,7 +959,7 @@ def main() -> None:
         lines.extend(["", "可选精检提示：" if not adoption["blockers"] else "需处理的对白疑点：", ""])
         for row in pending:
             lines.append(f"- {row['id']}：{row['text']}；{', '.join(row['issues'])}。")
-    (output / "review.md").write_text("\n".join(lines) + "\n")
+    (output / "review.md").write_text("\n".join(lines) + "\n", encoding="utf-8")
     print(json.dumps(dict(result_path=str(output / "result.json"),
         review_path=str(output / "review.md"), timing=timing, warnings=warnings,
         automatic_pass=adoption["automatic_pass"], adoption_status=adoption["adoption_status"],
@@ -948,7 +970,7 @@ def main() -> None:
         adoption_source=result["adoption_source"], production_mode=result["production_mode"],
         simulated_adoption_pass=candidate_confirmation["simulated_adoption_pass"],
         confirmation_request_path=str(request_path) if reference is None and args.candidate_confirmation_json is None else None,
-        internal_review_request_path=str(internal_request) if reference is None and args.internal_review_json is None else None), ensure_ascii=False, indent=2))
+        internal_review_request_path=str(internal_request) if reference is None and args.internal_review_json is None else None), ensure_ascii=True, indent=2))
 
 
 if __name__ == "__main__":
