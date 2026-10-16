@@ -23,6 +23,7 @@ RELEASES_DIR = REPO_ROOT / "releases"
 CORE_FILES = [
     "AGENTS.md",
     "NEW_PROJECT_CONVERSATION_PROMPT.md",
+    "QUICK_START.md",
     "DEPLOYMENT.md",
     "ROADMAP.md",
     "memories/seedance_workflow/README.md",
@@ -109,8 +110,8 @@ def package_info(config: dict[str, str]) -> str:
 - 发布日期：`{config['release_date']}`
 - 发布状态：`{config.get('release_status', 'release')}`
 - 更新策略：仅在用户明确要求时手动更新
-- 内容：现行Seedance提示词规则、模板、技术摘要、匿名经验、空白项目结构与可选本机音频工具
-- 排除：所有历史项目、项目纪念目录、资产、审片、旧提示词、旧2.0 Skill与团队SOP
+- 内容：现行规则、完整启动词、本版上手SOP、音频与网页工具、匿名证据和空白项目结构
+- 排除：历史项目、真实资产／审片／提示词、旧2.0 Skill与历史团队资料
 
 ## 本版摘要
 
