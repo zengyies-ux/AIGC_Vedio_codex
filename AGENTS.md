@@ -84,4 +84,4 @@
 
 原剧本、素材、旧稿与失败证据不覆盖。反馈先修本项目，偏好留项目；有依据才更新唯一核心位置，用户新决定立即按范围执行。完整维护见[接续与反馈](memories/seedance_workflow/continuity_and_review.md#feedback-maintenance)。项目结束标明无活动任务，索引链接状态页。
 
-`Skill/seedance2-skill-main/`、`团队专项SOP/`及历史项目不默认读；方法、官方能力、平台约束与反馈分别标来源。
+`Skill/seedance2-skill-main/`及历史项目不默认读；方法、官方能力、平台约束与反馈分别标来源。
