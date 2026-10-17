@@ -95,7 +95,7 @@ C｜资产与空间：对照A的完整人物职责与阶段核实际图片，检
 
 第七至九节中的网页动作仅在本次明确包含网页任务时适用；只做本地稿则跳过，不因没有URL等待。若我明确要求网页但尚缺URL，只问缺少的目标信息，同时继续不依赖它的本地工作。
 
-读取extensions/seedance-jumeng-operator/SKILL.md，按任务读fill-and-verify.md、video-extension.md；完整生成还须读generation-execution.md及tools/web_execution/README.md。网页工具按当前宿主文档使用，所有内部记录由你维护。未指定浏览器时优先当前可用的Codex内置浏览器；我指定或已有正常连接时沿用，不为绕过权限拒绝换通道。需要登录时说明对应站点和浏览器会话；只有使用在线文档才需登录飞书。
+读取extensions/seedance-jumeng-operator/SKILL.md，按任务读fill-and-verify.md、video-extension.md；完整生成还须读generation-execution.md及tools/web_execution/README.md。网页工具按当前宿主文档使用，所有内部记录由你维护。默认使用Codex内置浏览器，取图与制作网站在同一浏览器会话内进行；只有我明确指定其他浏览器才改变。内置浏览器不可用时报告具体限制，不因外部浏览器已登录自动改用，也不绕过权限拒绝。需要登录时说明对应站点和浏览器会话；只有使用在线文档才需登录飞书。
 
 本次授权在指定本集范围内复用正确库资产、将缺少的必要真实图上传到项目素材库、为独立原生任务新建必要空卡、填唯一采用正文、建立真实引用和正常保存。先核真实项目／集／卡和现有内容，已存在则复用，缺卡才建并记ID；未知非空内容的覆盖范围只问该项，不动其他集。
 
