@@ -25,6 +25,7 @@ CORE_FILES = [
     "NEW_PROJECT_CONVERSATION_PROMPT.md",
     "QUICK_START.md",
     "DEPLOYMENT.md",
+    "WINDOWS_BROWSER_TROUBLESHOOTING.md",
     "ROADMAP.md",
     "memories/seedance_workflow/README.md",
     "memories/seedance_workflow/director_os.md",

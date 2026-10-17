@@ -2,7 +2,7 @@
 
 这里保存用户明确要求发布的干净核心学习包。
 
-**当前正式发布：[Core1.7.2](https://github.com/zengyies-ux/AIGC_Vedio_codex/releases/tag/core-v1.7.2)**。Windows优先SOP及完整启动词已入包；当前Mac整集真实链获用户认可，Windows x64适配已提供、真机待验。以下各版本说明均为历史时点。
+**当前正式发布：[Core1.7.3](https://github.com/zengyies-ux/AIGC_Vedio_codex/releases/tag/core-v1.7.3)**。Windows浏览器准备、条件式故障排查、素材库三层核对与完整启动词已入包；Mac完整链获用户认可，Windows已有用户反馈的网页操作，修订流程与完整链仍待真机验证。以下各版本说明均为历史时点。
 
 - `latest.json`记录当前版本、文件名、文件数、体积和SHA-256。
 - 同名`.zip.sha256`用于校验压缩包完整性。
