@@ -12,7 +12,7 @@
 
 当前工作树为V3.8／Core1.8.0候选，基于Core1.7.3；正式推荐仍为Core1.7.3。候选变更与待验见[V3.8核验](validation/director_v38.md)，各平台范围见[部署说明](DEPLOYMENT.md)。先据剧本设计场面与力度，再转译镜头／声音，最后核技术。有明确人物冲突时，主动设计有力度的肢体对抗，并拍清对手、在场者及环境的因果反应；细则唯一见[冲突场面](memories/seedance_workflow/director_os.md#conflict-staging)。声音连续，按行动与回应切镜；长台词跨镜，见[声音跨镜](memories/seedance_workflow/execution_rules.md#audio-shot-independence)。
 
-从原材料开始的同类完整单集默认A剧本／冲突、B声音／时间、C资产／空间三名GPT-6.1-sol high协作，主控统一设计与采用；沿用采用设计、自带正式稿、小修或用户指定单智能体不强制三代理，容量不可用不无限重试，见[协作职责](memories/seedance_workflow/director_os.md#collaboration)。
+从原材料开始的同类完整单集默认A剧本／冲突、B声音／时间、C资产／空间三名GPT-6.1-sol low协作，主控统一设计与采用；沿用采用设计、自带正式稿、小修或用户指定单智能体不强制三代理，容量不可用不无限重试，见[协作职责](memories/seedance_workflow/director_os.md#collaboration)。
 
 ## 2. 用户决定与协作边界
 
