@@ -20,6 +20,9 @@ class PromptChecks(unittest.TestCase):
         self.assertEqual(inspect(sample())['visual_quality'],'not_assessed')
     def test_long_shot_rejected(self):
         self.assertIn('shot_too_long',self.codes(sample(((0,5.6),))))
+    def test_default_upper_boundary_and_one_millisecond_over(self):
+        self.assertTrue(inspect(sample(((0,2.5),(2.5,5))))['structural_pass'])
+        self.assertIn('shot_too_long',self.codes(sample(((0,2.501),(2.501,5)))))
     def test_gap_rejected(self):
         self.assertIn('coverage_gap_or_overlap',self.codes(sample(((0,2),(2.1,3.4),(3.4,5.6)))))
     def test_overlap_rejected(self):
@@ -38,11 +41,31 @@ class PromptChecks(unittest.TestCase):
         self.assertIn('shot_count',self.codes(sample().replace('共3个','共9个')))
         self.assertIn('end_coverage',self.codes(sample().replace('生成5.6秒','生成6秒')))
     def test_no_fake_point_eight_minimum(self):
-        self.assertTrue(inspect(sample(((0,.6),(.6,3),(3,5.6))))['structural_pass'])
+        self.assertTrue(inspect(sample(((0,.6),(.6,3),(3,5.4))))['structural_pass'])
     def test_missing_body_fails_closed(self):
         self.assertFalse(inspect('只有摘要')['structural_pass'])
     def test_other_explicit_upper_limit(self):
         self.assertTrue(inspect(sample(((0,5.6),)),6)['structural_pass'])
+        text=sample(((0,2.501),(2.501,5)))
+        self.assertTrue(inspect(text,2.501)['structural_pass'])
+        self.assertIn('shot_too_long',{x['code'] for x in inspect(text,2.5)['errors']})
+    def test_cli_default_and_explicit_float_limit(self):
+        script=Path(__file__).with_name('check_prompt.py')
+        with tempfile.TemporaryDirectory() as directory:
+            path=Path(directory)/'prompt.md'
+            for shots, expected in [(((0,2.5),(2.5,5)),0),
+                                    (((0,2.501),(2.501,5)),1)]:
+                path.write_text(sample(shots))
+                result=subprocess.run([sys.executable,str(script),str(path)],capture_output=True,text=True)
+                self.assertEqual(result.returncode,expected,result.stderr)
+                self.assertEqual(json.loads(result.stdout)[0]['structural_pass'],expected==0)
+            result=subprocess.run([sys.executable,str(script),str(path),'--max-shot-seconds','2.501'],
+                                  capture_output=True,text=True)
+            self.assertEqual(result.returncode,0,result.stderr)
+            self.assertTrue(json.loads(result.stdout)[0]['structural_pass'])
+        result=subprocess.run([sys.executable,str(script),'--help'],capture_output=True,text=True)
+        self.assertEqual(result.returncode,0,result.stderr)
+        self.assertIn('默认2.5秒',result.stdout)
     def test_missing_count_rejected(self):
         self.assertIn('shot_count_missing',self.codes(sample().replace('共3个真实镜头','若干镜头')))
     def test_short_count_form(self):

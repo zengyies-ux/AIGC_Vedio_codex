@@ -1,8 +1,8 @@
 {
   "package_name": "Seedance_Codex_Workflow_Core",
-  "version": "1.7.3",
+  "version": "1.8.0",
   "release_date": "2026-10-17",
   "update_policy": "manual_only_when_user_requests",
-  "summary": "V3.7 Windows网页操作补丁：项目素材库入库、卡片参考与正文真实节点分别核实；支持整段填稿后绑定；补充内置浏览器登录和条件式插件清单故障指南。导演、音频与日志代码保持。Mac完整链已验，Windows已有用户反馈的部分网页操作，新流程与Windows整集完整链仍待验。",
-  "release_status": "release"
+  "summary": "V3.8本地候选：同类短剧单镜≤2.5秒、常态偏1—1.5秒且每切有信息；以整场锚点及实际动作维护跨镜站位。新增只读在线资产入口，用户给材料文件夹和资产URL，AI按实际子表下载核图、归档并接1.7.3三层引用。保音频与网页执行基线，候选元数据不覆盖正式推荐1.7.3。Windows1.7.2用户实操可用；新流程及画面仍待现场验证。",
+  "release_status": "local_candidate"
 }

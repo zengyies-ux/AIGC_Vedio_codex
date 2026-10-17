@@ -1,6 +1,6 @@
-# Seedance Codex Workflow Core 1.7.3
+# Seedance Codex Workflow Core 1.8.0 Candidate
 
-V3.7团队上手发行包，包含规则、完整启动词、简明SOP、本机音频工具与网页执行技能；不含真实剧本、素材、音频、成片或账号。
+V3.8本地候选包，基于Core1.7.3：增加只读在线资产入口、≤2.5秒有效切镜和整场站位连续规则。沿用原音频及网页提交／延长能力，不包含真实剧本、素材、音频、成片或账号。正式推荐仍是Core1.7.3；本包只用于用户明确选择的候选验证，不视为新正式Release。
 
 ## 从这里开始
 
@@ -13,6 +13,6 @@ V3.7团队上手发行包，包含规则、完整启动词、简明SOP、本机�
 
 ## 已验证范围
 
-当前Apple Silicon Mac环境已完成真实整集自动链并获用户认可。Windows x64 CPU后端、自动部署与自检已提供；已有用户反馈的网页操作验证，**完整音频—生成—延长链及修订入库流程仍待真机验证**。程序测试、单集结果与其他平台支持分开，见[V3.7验证说明](validation/director_v37.md)。关闭应用后的持久后台执行尚未提供。
+既有Apple Silicon Mac环境已完成真实整集自动链并获用户认可；用户确认Windows Core1.7.2实操无问题。Core1.7.3入库修订及本候选在线入口、快切和站位效果仍需分别实测，见[V3.8说明](validation/director_v38.md)。历史证据沿[V3.7记录](validation/director_v37.md)，不把文字、模拟或旧版通过当候选实片通过。关闭应用后的持久后台执行尚未提供。
 
 `PACKAGE_INFO.md`记录版本，`MANIFEST.sha256`列文件哈希。新安装使用[空项目索引](memories/seedance_workflow/projects/INDEX.md)；升级保留个人项目与索引，不能整包覆盖。历史过程见[变更记录](CHANGELOG.md)，后续能力见[路线图](ROADMAP.md)。

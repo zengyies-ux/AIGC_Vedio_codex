@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """Build the clean Seedance Codex core package from an explicit whitelist.
 
-This script is intentionally manual. Run it only after the user explicitly asks
-for a new package release.
+This script is intentionally manual. Run it only for an authorized candidate
+build or release. Candidate metadata must not replace the recommended release.
 """
 
 from __future__ import annotations
@@ -32,6 +32,7 @@ CORE_FILES = [
     "memories/seedance_workflow/model_behavior.md",
     "memories/seedance_workflow/seedance_2_5_technical_notes.md",
     "memories/seedance_workflow/execution_rules.md",
+    "memories/seedance_workflow/online_assets.md",
     "memories/seedance_workflow/prompt_template.md",
     "memories/seedance_workflow/continuity_and_review.md",
     "memories/seedance_workflow/director_patterns.md",
@@ -58,6 +59,7 @@ CORE_FILES = [
     "validation/director_v35.md",
     "validation/director_v36.md",
     "validation/director_v37.md",
+    "validation/director_v38.md",
     "extensions/seedance-jumeng-operator/SKILL.md",
     "extensions/seedance-jumeng-operator/references/fill-and-verify.md",
     "extensions/seedance-jumeng-operator/references/evidence.md",
@@ -189,8 +191,17 @@ def write_deterministic_zip(package_root: Path, archive_path: Path, release_date
             archive.writestr(info, path.read_bytes())
 
 
+def metadata_filename(release_status: str) -> str:
+    if release_status == "release":
+        return "latest.json"
+    if release_status in {"local_candidate", "branch_candidate"}:
+        return "candidate.json"
+    raise ValueError(f"Unsupported release_status: {release_status}")
+
+
 def main() -> None:
     config = json.loads((PACKAGING_DIR / "package_config.json").read_text(encoding="utf-8"))
+    metadata_name = metadata_filename(config.get("release_status", "release"))
     folder_name = f"{config['package_name']}_v{config['version']}"
     archive_name = f"{folder_name}_{config['release_date']}.zip"
     archive_path = RELEASES_DIR / archive_name
@@ -228,7 +239,7 @@ def main() -> None:
         **stats,
     }
     RELEASES_DIR.mkdir(parents=True, exist_ok=True)
-    (RELEASES_DIR / "latest.json").write_text(
+    (RELEASES_DIR / metadata_name).write_text(
         json.dumps(metadata, ensure_ascii=False, indent=2) + "\n",
         encoding="utf-8",
     )

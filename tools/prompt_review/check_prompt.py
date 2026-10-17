@@ -83,7 +83,7 @@ def inspect_extension_source(body, generation_mode=None):
                        '空间与道具状态 needs the identical fixed source name and a state description')}
 
 
-def inspect(text, max_shot_seconds=3.0, generation_mode=None):
+def inspect(text, max_shot_seconds=2.5, generation_mode=None):
     if not math.isfinite(max_shot_seconds) or max_shot_seconds <= 0:
         raise ValueError('max_shot_seconds must be finite and positive')
     source_reference = inspect_extension_source('', generation_mode)
@@ -154,7 +154,7 @@ def inspect(text, max_shot_seconds=3.0, generation_mode=None):
 def main():
     parser=argparse.ArgumentParser(description=__doc__)
     parser.add_argument('files', nargs='*', type=Path)
-    parser.add_argument('--max-shot-seconds',type=float,default=3.0,help='当前用户快节奏任务为3秒；其他题材传实际上限')
+    parser.add_argument('--max-shot-seconds',type=float,default=2.5,help='默认2.5秒：当前同类快节奏旁白短剧；其他题材传实际上限')
     parser.add_argument('--mode', choices=('native', 'extension'), help='显式生成方式；整集输入时使用每段mode')
     parser.add_argument('--episode-budget', type=Path, help='显式A及唯一当前各段path/mode/seconds的JSON；不扫描历史')
     args=parser.parse_args()

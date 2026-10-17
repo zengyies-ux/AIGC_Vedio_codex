@@ -2,7 +2,9 @@
 
 面向短剧制作团队的 Codex 工作流：读取剧本、音频和真实资产，结合用户想法完成提示词，并按授权执行网页原生生成、等待结果和视频延长。
 
-**当前发布：Core 1.7.3 · V3.7 团队上手版**
+**当前正式推荐：Core 1.7.3 · V3.7 团队上手版**
+
+本工作树正在开发 **V3.8／Core1.8.0候选**：在线资产来源、≤2.5秒有效切镜与整场站位连续。候选不自动升级组员环境；本地入口见[候选说明](validation/director_v38.md)，正式部署仍沿下方1.7.3链接。
 
 [使用SOP](https://github.com/zengyies-ux/AIGC_Vedio_codex/blob/core-v1.7.3/QUICK_START.md) · [完整制作启动词](https://github.com/zengyies-ux/AIGC_Vedio_codex/blob/core-v1.7.3/NEW_PROJECT_CONVERSATION_PROMPT.md) · [下载与版本说明](https://github.com/zengyies-ux/AIGC_Vedio_codex/releases/tag/core-v1.7.3)
 
@@ -31,7 +33,7 @@
 
 | 环境 | 当前范围 |
 |---|---|
-| Windows x64 | 已提供CPU音频后端、依赖准备与自检；已有用户反馈的网页操作验证，**完整音频—生成—延长链及修订入库流程待真机验证**。 |
+| Windows x64 | 已提供CPU音频后端、依赖准备与自检；用户确认Core1.7.2实操无问题。**1.7.3入库修订及V3.8在线／镜头改进仍须单独验证**。 |
 | Apple Silicon Mac | 英文音频工具及网页完整制作已有真实单集验证，画面与连续性获用户认可。 |
 | 其他架构／语言 | 未声明完整支持；由Codex说明实际能力及缺项。 |
 

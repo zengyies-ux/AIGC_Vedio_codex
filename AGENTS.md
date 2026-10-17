@@ -6,11 +6,11 @@
 
 把剧本、可选想法和真实素材转成自然、可执行的视频提示词：忠实事件，人物、空间、动作、道具与声音连续，情绪与记忆点可读。
 
-输入：完整剧本、目标集数、该集完整MP3/WAV、已有资产图、可选想法；不要求用户制作单集Word、绿标、人工时码或逐镜画面。本制作流程不自行生成或重绘资产图，不另写图片生成提示词；必要缺图由用户补齐。按现有材料自然接入：从原材料开始完成前置；已有采用解读／分段则保留设计、补齐剩余；已有正式稿则直接网页准备／续做。AI识别阶段，不让用户选菜单或补内部表。完整前置及各入口见[导演流程](memories/seedance_workflow/director_os.md#workflow-stages)。
+输入：用户剧目材料文件夹中的完整剧本、目标集数及该集完整MP3/WAV，另有本地资产图或只读在线资产文档、可选想法。在线图由AI按本集需要下载到同一材料文件夹，核图与来源沿[在线资产入口](memories/seedance_workflow/online_assets.md)，用户不另填下载输出目录；不要求用户制作单集Word、绿标、人工时码或逐镜画面。本制作流程不自行生成或重绘资产图，不另写图片生成提示词；必要缺图由用户补齐。按现有材料自然接入：从原材料开始完成前置；已有采用解读／分段则保留设计、补齐剩余；已有正式稿则直接网页准备／续做。AI识别阶段，不让用户选菜单或补内部表。完整前置及各入口见[导演流程](memories/seedance_workflow/director_os.md#workflow-stages)。
 
 默认验证模式：新解读、分段/候选位置一次整体审核后出正式稿，已有采用阶段直接继承，不追加审批。用户明确授权当集自主制作时，在该范围内部核查后直接出稿并落盘授权，不因升级失效，也不据此启用全局常规模式；自主前置与网页准备／生成授权分别记录，见[交付与续做](memories/seedance_workflow/continuity_and_review.md#execution-handoff)。用户认可流程/效果并落盘启用常规模式后，内部核查采用出稿；沉默、文档验收或发布不切模式。资产缺失、输入冲突或无法内解问题才问，少确认不省设计。
 
-当前V3.7／Core1.7.3发行版；各平台实测范围见[部署说明](DEPLOYMENT.md)。先据剧本设计场面与力度，再转译镜头／声音，最后核技术。有明确人物冲突时，主动设计有力度的肢体对抗，并拍清对手、在场者及环境的因果反应；细则唯一见[冲突场面](memories/seedance_workflow/director_os.md#conflict-staging)。声音连续，按行动与回应切镜；长台词跨镜，见[声音跨镜](memories/seedance_workflow/execution_rules.md#audio-shot-independence)。
+当前工作树为V3.8／Core1.8.0候选，基于Core1.7.3；正式推荐仍为Core1.7.3。候选变更与待验见[V3.8核验](validation/director_v38.md)，各平台范围见[部署说明](DEPLOYMENT.md)。先据剧本设计场面与力度，再转译镜头／声音，最后核技术。有明确人物冲突时，主动设计有力度的肢体对抗，并拍清对手、在场者及环境的因果反应；细则唯一见[冲突场面](memories/seedance_workflow/director_os.md#conflict-staging)。声音连续，按行动与回应切镜；长台词跨镜，见[声音跨镜](memories/seedance_workflow/execution_rules.md#audio-shot-independence)。
 
 从原材料开始的同类完整单集默认A剧本／冲突、B声音／时间、C资产／空间三名GPT-6.1-sol high协作，主控统一设计与采用；沿用采用设计、自带正式稿、小修或用户指定单智能体不强制三代理，容量不可用不无限重试，见[协作职责](memories/seedance_workflow/director_os.md#collaboration)。
 
@@ -59,6 +59,7 @@
 
 | 执行疑难／专项 | 精确入口 |
 |---|---|
+| 在线资产读取／下载 | 用户提供的材料目录及文档URL → [在线资产入口](memories/seedance_workflow/online_assets.md)；先核同类子表、原图及阶段，源表只读。 |
 | 素材与参考绑定 | [参考与素材](memories/seedance_workflow/execution_rules.md#references) |
 | 镜数、真实切点、构图与运镜 | [镜头执行](memories/seedance_workflow/execution_rules.md#shots) |
 | 声音定位、现场对白替换、预算与三时轴 | [声音与时间](memories/seedance_workflow/execution_rules.md#sound-and-time) |
