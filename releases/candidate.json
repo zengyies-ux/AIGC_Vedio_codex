@@ -5,8 +5,8 @@
   "release_status": "local_candidate",
   "update_policy": "manual_only_when_user_requests",
   "archive": "Seedance_Codex_Workflow_Core_v1.8.0_2026-10-17.zip",
-  "sha256": "1d025ddb8f4c484a5156ad88164e253a65b91b8f00daa0a825d20ca56620d474",
+  "sha256": "fabd0d0e0b9e41e8e5bf65c07457dc132f26d7870f4e6bcf684b9c333efea38d",
   "file_count": 55,
   "markdown_count": 41,
-  "uncompressed_bytes": 711752
+  "uncompressed_bytes": 720180
 }

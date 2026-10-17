@@ -81,6 +81,6 @@ project_slug/
 
 剧本解读／分段见[导演流程](../director_os.md)；正式落稿使用[既有提示词模板](../prompt_template.md)；具体动作、声音与摄影查[执行规则](../execution_rules.md)；接续及实片证据查[接续与审片](../continuity_and_review.md)。本模板不复制完整方法，不改变提示词栏目及逐镜粒度。
 
-同类完整单集默认[A／B／C协作](../director_os.md#collaboration)，主控汇合，不把代理输出变成三套索引。每集可剪素材按[唯一时间政策](../execution_rules.md#sound-and-time)维护，不复制预算规则。
+同类完整单集默认[A／B／C／D协作](../director_os.md#collaboration)，主控汇合，不把代理输出变成多套索引。每集可剪素材按[唯一时间政策](../execution_rules.md#sound-and-time)维护，不复制预算规则。
 
 真实反馈按“预期→实际→成立部分／偏差→原因假设→最小修正→验证结果”记录。只有实际反馈才下成片结论；项目偏好留本项目，可推广经验才更新唯一核心处，明确用户新决定立即按范围执行。细则见[反馈维护](../continuity_and_review.md#feedback-maintenance)。
