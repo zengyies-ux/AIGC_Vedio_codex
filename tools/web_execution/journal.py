@@ -68,7 +68,7 @@ def _authorization(value):
         _number(auth['max_cost'], 'User maximum cost')
         if not _text(auth.get('currency')):
             raise ValueError('An explicit cost limit needs its actual currency/unit')
-    for key in ('review_required', 'auto_repair'):
+    for key in ('review_required', 'auto_repair', 'review_audio'):
         if key in auth and type(auth[key]) is not bool:
             raise ValueError('Review and repair authorization flags must be boolean')
     if auth.get('auto_repair') and not auth.get('review_required'):
@@ -392,13 +392,14 @@ def _covers_duration(intervals, duration):
     return end >= duration - Decimal('0.01')
 
 
-def _review_coverage(value, duration):
+def _review_coverage(value, duration, audio_required=False):
     if not isinstance(value, dict) or not isinstance(value.get('limitations'), str):
         raise ValueError('Review records actual visual/audio intervals and known limitations')
-    normalized = {'limitations': value['limitations']}
+    normalized = {'limitations': value['limitations'],
+                  'audio_status': 'requested' if audio_required else 'not_requested'}
     complete = {}
     for channel in ('visual', 'audio'):
-        intervals = value.get(channel)
+        intervals = value.get(channel, [] if channel == 'audio' and not audio_required else None)
         if not isinstance(intervals, list):
             raise ValueError('Actual inspected visual and audio interval lists required')
         normalized[channel] = [_interval(item, duration) for item in intervals]
@@ -414,11 +415,12 @@ def _review_coverage(value, duration):
     normalized['methods_declared'] = methods
     assessed = deepcopy(complete)
     if methods:
-        if value.get('visual_method') not in ('continuous', 'shot_sequence') or value.get('audio_method') not in ('listening', 'transcript_and_spotcheck'):
+        if value.get('visual_method') not in ('continuous', 'shot_sequence') or (audio_required and value.get('audio_method') not in ('listening', 'transcript_and_spotcheck')):
             raise ValueError('Declare supported actual visual and audio assessment methods')
         if 'blocking_unknowns' not in value:
             raise ValueError('Method-based assessment must explicitly record blocking unknowns')
-        normalized.update(visual_method=value['visual_method'], audio_method=value['audio_method'])
+        normalized.update(visual_method=value['visual_method'],
+                          audio_method=value.get('audio_method', 'not_requested'))
         if value['visual_method'] == 'shot_sequence':
             shots = value.get('shot_coverage', [])
             if not isinstance(shots, list):
@@ -440,7 +442,7 @@ def _review_coverage(value, duration):
                 normalized['shot_coverage'].append(dict(interval=interval, frame_points=checked_points, evidence=shot['evidence']))
             normalized['visual_evidence'] = value.get('visual_evidence', '')
             assessed['visual'] = bool(_text(normalized['visual_evidence']) and _covers_duration([shot['interval'] for shot in normalized['shot_coverage']], duration))
-        if value['audio_method'] == 'transcript_and_spotcheck':
+        if audio_required and value.get('audio_method') == 'transcript_and_spotcheck':
             transcript = value.get('transcript_coverage', [])
             if not isinstance(transcript, list):
                 raise ValueError('Transcript comparison coverage must be separate from actual listening')
@@ -463,8 +465,10 @@ def _review(record, task_id, outcome, evidence, result_key=None, issue=None, cau
         raise ValueError('Critical review needs a concrete issue and failure attribution')
     inspected = None
     if t['status'] == 'result' and record['authorization'].get('review_required'):
-        inspected = _review_coverage(coverage, _number(t['result']['actual_seconds'], 'Actual duration'))
-        if outcome in ('usable', 'minor') and (not all(inspected['assessment_complete'].values()) or inspected['blocking_unknowns'] or (not inspected['methods_declared'] and inspected['limitations'].strip())):
+        audio_required = record['authorization'].get('review_audio', False)
+        inspected = _review_coverage(coverage, _number(t['result']['actual_seconds'], 'Actual duration'), audio_required)
+        required_channels = ('visual', 'audio') if audio_required else ('visual',)
+        if outcome in ('usable', 'minor') and (not all(inspected['assessment_complete'][channel] for channel in required_channels) or inspected['blocking_unknowns'] or (not inspected['methods_declared'] and inspected['limitations'].strip())):
             raise ValueError('Missing assessment coverage or blocking unknowns remain unresolved; method limitations alone are not blockers')
     value = dict(outcome=outcome, evidence=evidence, result_key=result_key, issue=issue,
                  cause=cause, plan=plan, coverage=inspected, at=now())

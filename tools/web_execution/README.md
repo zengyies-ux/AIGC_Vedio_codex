@@ -1,4 +1,4 @@
-# 轻量网页回执与审修日志（Core 1.8.6 本地候选）
+# 轻量网页回执与审修日志（Core 1.8.7 本地候选）
 
 `journal.py`是宿主LLM的提交前后记录工具，使用Python标准库。它不连接浏览器、不点击、不等待、不下载、不调用私有API，也不支付。完整操作规程见[授权生成—等待—核源—续做](../../extensions/seedance-jumeng-operator/references/generation-execution.md)。
 
@@ -64,11 +64,13 @@ JSON事件和目录由AI内部整理，用户不需要填写表格、卡号或JS
 
 ## 主动审片与有界修正
 
-完整生成授权包含主动审修时，宿主实际查看本次结果、关键动作和现场对白，调用`review`。`coverage.visual/audio`始终记录实际看过／听过的窗口，坐标为该结果内秒数；不能把首中尾抽帧或转写区间伪写成全片观看／听检。默认旧格式仍要求这两项完整覆盖且limitations为空；没有方法字段时，添加空blocking_unknowns不能绕过旧限制。
+完整生成授权包含主动审修时，宿主实际复查画面并调用review。Core1.8.7默认review_audio=false（省略也为false），只以视觉覆盖与视觉关键未决判断采用／核源；不提取或转写成片声音，不要求用户试听。coverage.audio可省略或为空，audio_status=not_requested，complete.audio仍如实记false而非伪造通过。原始输入配音的定位和提示词原句核对保留。
 
-支持明确声明`visual_method=continuous|shot_sequence`、`audio_method=listening|transcript_and_spotcheck`和`blocking_unknowns=[]`。`limitations`保留“未逐帧”“没有全轨连续听检”等方法限制；真正影响事件、台词、说者、动作、身份或接缝的未决判断写入blocking_unknowns，不能挪到limitations后宣称可用。明确方法下，完整方法覆盖且无关键未决即可usable/minor，不因合法方法限制逼用户逐条代审。
+只有用户明确专项检查生成声音才录review_audio=true，并使用下述可选音频方法及门禁。旧记录不清零：按当前用户决定更新音频政策、复用视觉证据追加review，可解除仅因声音的旧unknown，不伪造user_accept。真实提交unknown、视觉问题、修正次数和原授权保持。
 
-- continuous／listening仍要求实际visual／audio窗口完整覆盖。
+支持明确声明`visual_method=continuous|shot_sequence`、`audio_method=listening|transcript_and_spotcheck`和`blocking_unknowns=[]`。`limitations`保留“未逐帧”“没有全轨连续听检”等方法限制；真正影响事件、台词、说者、动作、身份或接缝的未决判断写入blocking_unknowns，不能挪到limitations后宣称可用。明确方法下，当前要求通道的方法覆盖且无关键未决即可usable/minor，不因合法方法限制逼用户逐条代审。
+
+- continuous要求visual窗口完整覆盖；listening仅在review_audio=true时要求audio覆盖。未请求声音时不用audio_method或transcript_coverage；blocking_unknowns只列本轮实际检查范围内的关键未决项，不放声音未核。
 - shot_sequence另记`shot_coverage=[{interval:[实际镜头起止],frame_points:[实际核看时点],evidence:"本镜证据"},...]`及`visual_evidence`。镜头区间须覆盖完整结果，每个实际镜头有帧点且落在该镜和真实visual窗口；visual_evidence说明全段扫描、实际切点、逐镜覆盖及关键动作／接缝加密，可引用存有具体时点的证据文件。首中尾少帧不代表全片，不能伪造镜头表来凑完整覆盖。
 - transcript_and_spotcheck另记`transcript_coverage`完整生成音轨转写与授权台词对照范围，以及`audio_evidence`说明该对照和实际疑点核对；audio仅为实际局部听检窗口且不能为空，不声称全片已听。转写不能确认的说者、台词、音效／动作时序等关键疑点须补核或列blocking_unknowns。
 

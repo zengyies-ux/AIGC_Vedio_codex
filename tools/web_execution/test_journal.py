@@ -486,7 +486,7 @@ class ReviewRepairTests(unittest.TestCase):
     complete_native = JournalBehaviorTests.complete_native
     check_source = JournalBehaviorTests.check_source
     def auto_init(self, tasks=None):
-        return self.init(authorization={**AUTH, 'review_required': True, 'auto_repair': True}, tasks=tasks)
+        return self.init(authorization={**AUTH, 'review_required': True, 'auto_repair': True, 'review_audio': True}, tasks=tasks)
 
     def review(self, key, outcome='critical', **extra):
         data = dict(task_id=key, outcome=outcome, evidence='SIMULATION: inspected actual result and sound',
@@ -818,6 +818,53 @@ class ReviewRepairTests(unittest.TestCase):
         with self.assertRaises(ValueError): self.review('N','usable',coverage=coverage)
         coverage=self.method_coverage(); del coverage['blocking_unknowns']
         with self.assertRaises(ValueError): self.review('N','usable',coverage=coverage)
+
+    def test_default_visual_review_allows_source_without_generated_audio_audit(self):
+        self.init(authorization={**AUTH, 'review_required': True, 'auto_repair': True})
+        self.complete_native()
+        self.review('N', 'usable', coverage=dict(visual=[[0,30.048]], visual_method='continuous',
+                    blocking_unknowns=[], limitations='Generated audio not reviewed by user policy'))
+        review=self.record()['tasks']['N']['review']['coverage']
+        self.assertEqual(review['audio'], [])
+        self.assertEqual(review['audio_status'], 'not_requested')
+        self.assertFalse(review['complete']['audio'])
+        self.check_source()
+        self.intent('E')
+
+    def test_visual_only_sampling_needs_no_audio_or_transcript_but_still_needs_visual_coverage(self):
+        self.init(authorization={**AUTH, 'review_required': True, 'auto_repair': True}, tasks=[task('N')])
+        self.complete_native()
+        coverage=self.method_coverage()
+        for field in ('audio','audio_method','transcript_coverage','audio_evidence'): coverage.pop(field)
+        self.review('N','usable',coverage=coverage)
+        coverage['shot_coverage']=[]
+        with self.assertRaises(ValueError): self.review('N','usable',coverage=coverage)
+        coverage=self.method_coverage(); coverage['blocking_unknowns']=['Visual identity unresolved']
+        with self.assertRaises(ValueError): self.review('N','usable',coverage=coverage)
+
+    def test_explicit_audio_audit_remains_opt_in_and_must_not_fake_success(self):
+        self.auto_init(tasks=[task('N')]); self.complete_native()
+        coverage=dict(visual=[[0,30.048]],audio=[],visual_method='continuous',audio_method='listening',
+                      blocking_unknowns=[],limitations='Audio unavailable')
+        with self.assertRaises(ValueError): self.review('N','usable',coverage=coverage)
+
+    def test_resume_audio_only_unknown_with_new_visual_policy_preserves_old_evidence(self):
+        self.auto_init(); self.complete_native()
+        coverage=dict(visual=[[0,30.048]],audio=[],visual_method='continuous',audio_method='listening',
+                      blocking_unknowns=['Audio not heard'],limitations='Audio unavailable')
+        self.review('N','unknown',coverage=coverage)
+        self.event('authorize', authorization={**AUTH,'review_required':True,'auto_repair':True,'review_audio':False},
+                   current=journal.snapshot(self.record()),evidence='SIMULATION direct user says skip generated audio review')
+        coverage['blocking_unknowns']=[]
+        self.review('N','usable',coverage=coverage)
+        rows=self.record()['tasks']['N']['reviews']
+        self.assertEqual(rows[-2]['outcome'],'unknown')
+        self.assertFalse(rows[-1]['coverage']['complete']['audio'])
+        self.check_source(); self.intent('E')
+
+    def test_audio_policy_requires_a_real_boolean(self):
+        with self.assertRaises(ValueError):
+            self.init(authorization={**AUTH,'review_audio':'false'})
 
     def test_structure_parameter_change_and_duplicate_repair_rejected(self):
         self.auto_init(tasks=[task('N')]); self.complete_native(); self.review('N')
