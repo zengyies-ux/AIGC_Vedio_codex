@@ -27,4 +27,4 @@
 
 V3.6先据剧本设计[冲突场面](director_os.md#conflict-staging)，再按[声音跨镜](execution_rules.md#audio-shot-independence)转译镜头与连续声轨。可计算检查见[提示词检查工具](../../tools/prompt_review/README.md)，不接管拍法或认证画面质量；匿名验收及未验证边界见[本版说明](../../validation/director_v36.md)。
 
-[整集可剪素材政策](execution_rules.md#sound-and-time)唯一维护A／G／R与6—10秒，按[协作职责](director_os.md#collaboration)汇合完整输入。用户指定网页任务才加载[唯一填稿扩展](../../extensions/seedance-jumeng-operator/SKILL.md)，V3.6保留原生填稿，明确授权后按[唯一延长规程](../../extensions/seedance-jumeng-operator/references/video-extension.md)核真实源／区间／槽与正文节点及参数，只准备不生成。
+[整集可剪素材政策](execution_rules.md#sound-and-time)唯一维护A／G／R、随音轨长度变化的最低素材量与本轮分配，按[协作职责](director_os.md#collaboration)汇合完整输入。用户指定网页任务才加载[唯一填稿扩展](../../extensions/seedance-jumeng-operator/SKILL.md)，V3.6保留原生填稿，明确授权后按[唯一延长规程](../../extensions/seedance-jumeng-operator/references/video-extension.md)核真实源／区间／槽与正文节点及参数，只准备不生成。

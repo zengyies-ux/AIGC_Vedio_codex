@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 """Read-only checks on the existing Markdown prompt, not a visual-quality grader."""
 import argparse
-from decimal import Decimal, InvalidOperation, ROUND_CEILING, ROUND_FLOOR
+from decimal import Decimal, InvalidOperation
+from fractions import Fraction
 import json
 import math
 from pathlib import Path
@@ -48,14 +49,26 @@ def assess_episode_budget(episode=None, base_dir=None):
         if type(seconds) is not int or seconds <= 0:
             raise ValueError('segment seconds must be a positive integer; extension means newly added seconds')
         total += seconds
-    reserve = Decimal(total) - audio
-    minimum = int((audio + 6).to_integral_value(rounding=ROUND_CEILING))
-    maximum = int((audio + 10).to_integral_value(rounding=ROUND_FLOOR))
-    return {'status': 'assessed', 'budget_pass': 6 <= reserve <= 10,
+    # Exact rational arithmetic keeps ceil independent of Decimal context and
+    # avoids rounding the recurring 7*A/60 reserve before the integer ceiling.
+    audio_ratio = Fraction(audio)
+    minimum_reserve = 8 + 7 * audio_ratio / 60
+    minimum = math.ceil((67 * audio_ratio + 480) / 60)
+    reserve = total - audio_ratio
+    return {'status': 'assessed', 'budget_pass': total >= minimum,
+            'budget_scope': 'minimum_only',
             'audio_seconds': float(audio), 'generated_seconds': total,
             'reserve_seconds': float(reserve),
-            'integer_generated_range': [minimum, maximum],
-            'detail': 'G sums native submissions and extension additions once; excludes source copies and retries'}
+            'minimum_reserve_seconds': float(minimum_reserve),
+            'minimum_generated_seconds': minimum,
+            'target_generated_seconds': minimum,
+            'excess_seconds': max(0, total - minimum),
+            'excess_review_required': total > minimum,
+            'integer_generated_range': [minimum, None],
+            'detail': ('Minimum quantity only; default target is Gmin, excess requires a concrete reason '
+                       'and handling under existing authorization. G sums native submissions and extension '
+                       'additions once; excludes source copies and retries. No cost, editability, semantic '
+                       'or submission approval is established')}
 
 
 def inspect_extension_source(body, generation_mode=None):
@@ -165,7 +178,7 @@ def main():
         if args.episode_budget:
             if args.mode:
                 raise ValueError('--mode cannot override explicit episode segment modes')
-            episode = json.loads(args.episode_budget.read_text())
+            episode = json.loads(args.episode_budget.read_text(), parse_float=Decimal)
             base = args.episode_budget.resolve().parent
             budget = assess_episode_budget(episode, base)
             current = [(base / s['path']).resolve() for s in episode['segments']]

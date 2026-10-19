@@ -1,4 +1,5 @@
 import json
+from decimal import Decimal, localcontext
 from pathlib import Path
 import subprocess
 import sys
@@ -44,6 +45,8 @@ class PromptChecks(unittest.TestCase):
         self.assertTrue(inspect(sample(((0,.6),(.6,3),(3,5.4))))['structural_pass'])
     def test_missing_body_fails_closed(self):
         self.assertFalse(inspect('只有摘要')['structural_pass'])
+        unfenced = sample().replace('```text\n', '').replace('```', '')
+        self.assertIn('body_count', self.codes(unfenced))
     def test_other_explicit_upper_limit(self):
         self.assertTrue(inspect(sample(((0,5.6),)),6)['structural_pass'])
         text=sample(((0,2.501),(2.501,5)))
@@ -74,7 +77,7 @@ class PromptChecks(unittest.TestCase):
         with self.assertRaises(ValueError): inspect(sample(),float('nan'))
 
 class EpisodeBudgetChecks(unittest.TestCase):
-    def budget(self, audio=70.1649375, total=78):
+    def budget(self, audio=70.1649375, total=87):
         return {'audio_seconds': audio,
                 'segments': [{'path': '01.md', 'mode': 'native', 'seconds': total}]}
 
@@ -82,32 +85,57 @@ class EpisodeBudgetChecks(unittest.TestCase):
         self.assertEqual(assess_episode_budget()['detail'], 'budget not assessed')
         self.assertEqual(inspect(sample())['episode_budget']['status'], 'not_assessed')
 
-    def test_all_required_integer_boundaries(self):
-        cases = [(70, 76, True), (70, 80, True), (70, 75, False), (70, 81, False),
-                 (70.1649375, 77, True), (70.1649375, 80, True),
-                 (70.1649375, 76, False), (70.1649375, 81, False),
-                 (70.1649375, 71, False), (70.1649375, 101, False)]
-        for audio, total, expected in cases:
-            with self.subTest(audio=audio, total=total):
-                result = assess_episode_budget(self.budget(audio, total))
-                self.assertEqual(result['budget_pass'], expected)
-                self.assertEqual(result['integer_generated_range'], [76, 80] if audio == 70 else [77, 80])
+    def test_required_minimum_examples_and_excess_scope(self):
+        for audio, minimum in [(60, 75), (90, 109), (120, 142),
+                               (106.576, 128), (70, 87), (70.1649375, 87)]:
+            for total in [minimum - 1, minimum, minimum + 1, minimum + 1000]:
+                with self.subTest(audio=audio, total=total):
+                    result = assess_episode_budget(self.budget(audio, total))
+                    self.assertEqual(result['budget_pass'], total >= minimum)
+                    self.assertEqual(result['budget_scope'], 'minimum_only')
+                    self.assertEqual(result['minimum_generated_seconds'], minimum)
+                    self.assertEqual(result['target_generated_seconds'], minimum)
+                    self.assertEqual(result['integer_generated_range'], [minimum, None])
+                    self.assertEqual(result['excess_seconds'], max(0, total - minimum))
+                    self.assertEqual(result['excess_review_required'], total > minimum)
+                    self.assertAlmostEqual(result['minimum_reserve_seconds'], 8 + 7 * audio / 60)
+
+    def test_exact_ceiling_boundaries_ignore_decimal_context(self):
+        cases = [('59.9999999999999999999999999999999999999999', 75),
+                 ('60', 75), ('60.0000000000000000000000000000000000000001', 76),
+                 ('119.9999999999999999999999999999999999999999', 142),
+                 ('120', 142), ('120.0000000000000000000000000000000000000001', 143)]
+        for precision in [6, 28]:
+            with localcontext() as context:
+                context.prec = precision
+                for audio, minimum in cases:
+                    with self.subTest(precision=precision, audio=audio):
+                        report = assess_episode_budget(self.budget(Decimal(audio), minimum))
+                        self.assertEqual(report['minimum_generated_seconds'], minimum)
+                        self.assertTrue(report['budget_pass'])
+
+    def test_short_and_long_audio_have_proportional_minimum(self):
+        for audio, minimum in [(Decimal('0.001'), 9), (1, 10), (3600, 4028), (36000, 40208)]:
+            with self.subTest(audio=audio):
+                report = assess_episode_budget(self.budget(audio, minimum))
+                self.assertEqual(report['minimum_generated_seconds'], minimum)
+                self.assertTrue(report['budget_pass'])
 
     def test_native_plus_extension_counts_new_seconds_once(self):
         data = self.budget()
         data['segments'] = [{'path': '01.md', 'mode': 'native', 'seconds': 30},
                             {'path': '02.md', 'mode': 'extension', 'seconds': 20},
-                            {'path': '03.md', 'mode': 'native', 'seconds': 28}]
+                            {'path': '03.md', 'mode': 'native', 'seconds': 37}]
         report = assess_episode_budget(data)
-        self.assertEqual(report['generated_seconds'], 78)
-        self.assertAlmostEqual(report['reserve_seconds'], 7.8350625)
+        self.assertEqual(report['generated_seconds'], 87)
+        self.assertAlmostEqual(report['reserve_seconds'], 16.8350625)
         self.assertTrue(report['budget_pass'])
 
     def test_anonymous_allocation(self):
         data = self.budget()
         data['segments'] = [{'path': f'{i}.md', 'mode': 'native', 'seconds': n}
-                            for i, n in enumerate([21, 15, 28, 15])]
-        self.assertAlmostEqual(assess_episode_budget(data)['reserve_seconds'], 8.8350625)
+                            for i, n in enumerate([21, 15, 36, 15])]
+        self.assertAlmostEqual(assess_episode_budget(data)['reserve_seconds'], 16.8350625)
 
     def test_duplicate_explicit_paths_rejected_including_aliases(self):
         for second in ['01.md', './01.md', 'sub/../01.md']:
@@ -126,7 +154,8 @@ class EpisodeBudgetChecks(unittest.TestCase):
                     assess_episode_budget(data)
 
     def test_invalid_audio_rejected(self):
-        for value in [0, -1, float('nan'), float('inf'), True, '70', None]:
+        for value in [0, -1, float('nan'), float('inf'), float('-inf'),
+                      Decimal('NaN'), Decimal('sNaN'), Decimal('Infinity'), True, '70', None]:
             with self.subTest(value=value), self.assertRaises(ValueError):
                 assess_episode_budget(self.budget(value))
 
@@ -149,16 +178,18 @@ class EpisodeBudgetChecks(unittest.TestCase):
         script = Path(__file__).with_name('check_prompt.py')
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
-            # A=2 and one current eight-second segment: R=6; old file is ignored.
-            (root / 'current.md').write_text(sample(((0, 2), (2, 4), (4, 6), (6, 8))))
+            # A=2 requires ceil(2+8+14/60)=11; old file is ignored.
+            (root / 'current.md').write_text(sample(((0, 2), (2, 4), (4, 6), (6, 8), (8, 10), (10, 11))))
             (root / 'old.md').write_text('not a current prompt')
-            (root / 'budget.json').write_text(json.dumps(self.budget(2, 8)).replace('01.md', 'current.md'))
+            (root / 'budget.json').write_text(json.dumps(self.budget(2, 11)).replace('01.md', 'current.md'))
             result = subprocess.run([sys.executable, str(script), '--episode-budget', str(root / 'budget.json')],
                                     capture_output=True, text=True)
             self.assertEqual(result.returncode, 0, result.stderr)
             output = json.loads(result.stdout)
             self.assertEqual(len(output['prompts']), 1)
-            self.assertEqual(output['episode_budget']['generated_seconds'], 8)
+            self.assertEqual(output['episode_budget']['generated_seconds'], 11)
+            self.assertEqual(output['episode_budget']['target_generated_seconds'], 11)
+            self.assertFalse(output['episode_budget']['excess_review_required'])
             result = subprocess.run([sys.executable, str(script), str(root / 'current.md')],
                                     capture_output=True, text=True)
             self.assertEqual(json.loads(result.stdout)[0]['episode_budget']['status'], 'not_assessed')
@@ -172,6 +203,51 @@ class EpisodeBudgetChecks(unittest.TestCase):
             self.assertEqual(result.returncode, 1)
             output = json.loads(result.stdout)
             self.assertIn('submission_duration_mismatch', {e['code'] for e in output['prompts'][0]['errors']})
+
+    def test_cli_native_and_extension_additions_minimum_and_excess(self):
+        script = Path(__file__).with_name('check_prompt.py')
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            # A cumulative 50-second source copy is outside the explicit inputs.
+            (root / 'unlisted_source.md').write_text(sample(tuple((i, i + 2) for i in range(0, 50, 2))))
+            for last_seconds, expected_exit in [(24, 1), (25, 0), (26, 0)]:
+                data = {'audio_seconds': 60, 'segments': []}
+                for name, mode, seconds in [('01', 'native', 30), ('02', 'extension', 20),
+                                             ('03', 'native', last_seconds)]:
+                    text = sample(tuple((i, min(i + 2, seconds)) for i in range(0, seconds, 2)))
+                    if mode == 'extension':
+                        text = text.replace('【声音时序】',
+                                            '【人物与场景参考】\n首段真实源：【@视频2】\n'
+                                            '【空间与道具状态】\n首段真实源：沿实际末态继续。\n【声音时序】')
+                    (root / (name + '.md')).write_text(text)
+                    data['segments'].append({'path': name + '.md', 'mode': mode, 'seconds': seconds})
+                (root / 'budget.json').write_text(json.dumps(data))
+                result = subprocess.run([sys.executable, str(script), '--episode-budget', str(root / 'budget.json')],
+                                        capture_output=True, text=True)
+                with self.subTest(last_seconds=last_seconds):
+                    self.assertEqual(result.returncode, expected_exit, result.stderr)
+                    output = json.loads(result.stdout)
+                    self.assertTrue(all(p['structural_pass'] for p in output['prompts']))
+                    self.assertEqual(output['episode_budget']['generated_seconds'], 50 + last_seconds)
+                    self.assertEqual(output['episode_budget']['minimum_generated_seconds'], 75)
+                    self.assertEqual(output['episode_budget']['excess_review_required'], last_seconds > 25)
+                    self.assertEqual(output['prompts'][1]['source_reference']['source_binding'], 'not_assessed')
+                    self.assertTrue(all(p['visual_quality'] == 'not_assessed' for p in output['prompts']))
+
+    def test_cli_preserves_json_decimal_before_ceiling(self):
+        script = Path(__file__).with_name('check_prompt.py')
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            (root / '01.md').write_text(sample(tuple((i, min(i + 2, 75)) for i in range(0, 75, 2))))
+            for audio, minimum, expected_exit in [('60', 75, 0),
+                    ('60.0000000000000000000000000000000000000001', 76, 1)]:
+                data = self.budget(audio, 75)
+                (root / 'budget.json').write_text(json.dumps(data).replace('"' + audio + '"', audio))
+                result = subprocess.run([sys.executable, str(script), '--episode-budget', str(root / 'budget.json')],
+                                        capture_output=True, text=True)
+                with self.subTest(audio=audio):
+                    self.assertEqual(result.returncode, expected_exit, result.stderr)
+                    self.assertEqual(json.loads(result.stdout)['episode_budget']['minimum_generated_seconds'], minimum)
 
 
 class ExtensionSourceChecks(unittest.TestCase):

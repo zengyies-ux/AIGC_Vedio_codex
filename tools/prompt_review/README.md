@@ -24,8 +24,8 @@ structural_pass只代表已实现的结构项无错；visual_quality和source_co
   "audio_seconds": 70.1649375,
   "segments": [
     {"path": "01.md", "mode": "native", "seconds": 30},
-    {"path": "02.md", "mode": "extension", "seconds": 20},
-    {"path": "03.md", "mode": "native", "seconds": 28}
+    {"path": "02.md", "mode": "extension", "seconds": 27},
+    {"path": "03.md", "mode": "native", "seconds": 30}
   ]
 }
 ```
@@ -37,7 +37,11 @@ python3 tools/prompt_review/check_prompt.py /absolute/path/to/extension.md --mod
 
 `path`相对该JSON所在目录解析，也可用绝对路径。调用方负责列全且只列当前各段；工具拒绝归一化后的重复路径、通配符、未知方式、非正整数秒数和额外字段。`native`的seconds是原生提交秒数，`extension`是本次新增秒数；不填重复包含的源长，也不填失败返抽。若同时给位置文件参数，须与JSON当前各段路径及顺序完全一致。CLI还核正文声明的生成秒数与显式秒数相等。
 
-上例G＝30＋20＋28＝78，R＝7.8350625，通过6—10秒算术区间；不会将延长源再计30秒得到108。整数总长范围为`ceil(A+6)..floor(A+10)`，此例77—80。取整已计入R。唯一政策见[声音与时间](../../memories/seedance_workflow/execution_rules.md#sound-and-time)。`budget_pass`只证明显式数值满足区间，仍需人工核可裁位置、完整声音及实际区域预算。
+最低素材量按实际原轨A计算：`Rmin = 8 + 7A/60`，`Gmin = ceil(A + Rmin) = ceil((67A + 480)/60)`。此处Rmin是整集最低额外素材量，取整后的实际余量为`G-A`；不是每段加，也不重复加现场对白。60秒原轨最低75秒，90秒最低109秒，120秒最低142秒，106.576秒最低128秒（取整前127.009866…秒），70秒最低87秒。JSON小数按Decimal读取，向上取整使用精确分数运算，不先舍入循环小数，也不受Decimal上下文精度影响；API传入float时以其已有十进制表示为准，需保留精确边界可传Decimal。
+
+上例G＝30＋27＋30＝87，R＝16.8350625，Rmin＝16.185909375，Gmin＝87；不会将延长源再计30秒得到117。默认按Gmin这个精确整数目标分配各段；必要超出时，由主控说明具体原因并沿现有授权处理。工具不分配各段，也不新设超额授权流程。唯一政策见[声音与时间](../../memories/seedance_workflow/execution_rules.md#sound-and-time)。
+
+预算报告保留`generated_seconds`、`reserve_seconds`与`integer_generated_range`；新增`minimum_reserve_seconds`、`minimum_generated_seconds`、默认等于Gmin的`target_generated_seconds`、`excess_seconds = max(0, G-Gmin)`、`excess_review_required`。兼容范围字段改为`[Gmin, null]`，null表示本工具没有统一上限，不能当作无穷费用授权。低于Gmin时`budget_pass: false`；等于或超出时为true，同时固定`budget_scope: minimum_only`，超出时另标`excess_review_required: true`。通过只证明显式合计达到最低量，不能证明费用、可剪性、声音覆盖、语义、实际区域预算或提交已获批准，也不表示生成越多越好。
 
 未给整集信息时，单稿结果的`episode_budget`返回`status: not_assessed`和`detail: budget not assessed`。提供JSON时，CLI输出`{prompts: [...], episode_budget: {...}}`，顶层给整集核算；单稿自身仍不推断整集预算。不提供JSON时保留原数组输出。结构或预算失败退出1，输入无效／文件不可读退出2。Python API为`assess_episode_budget(episode=None, base_dir=None)`；无输入不检查，显式无效输入抛`ValueError`。
 
