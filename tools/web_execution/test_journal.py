@@ -145,6 +145,74 @@ class JournalBehaviorTests(unittest.TestCase):
             self.event('intent', task_id='E', visible=self.identity('E'), live=False)
         self.assertEqual(self.record()['tasks']['N']['status'], 'unknown')
 
+    def test_confirmed_native_processing_allows_next_native_in_same_record(self):
+        self.init(tasks=[task('A'), task('B')])
+        self.intent('A')
+        with self.assertRaisesRegex(ValueError, 'active submission'):
+            self.intent('B')
+        self.observe('A', 'processing')
+        actions = journal.next_actions(self.record())
+        self.assertTrue(any(x['task'] == 'A' and x['action'] == 'lookup_or_wait' for x in actions))
+        self.assertTrue(any(x['task'] == 'B' and x['action'] == 'readback_then_one_submit' for x in actions))
+        self.assertIn('one_use_click_permission', self.intent('B'))
+        self.observe('B', 'processing')
+        self.assertEqual(sum(t['intent'] is not None for t in self.record()['tasks'].values()), 2)
+        with self.assertRaisesRegex(ValueError, 'never retry'):
+            self.intent('A')
+
+    def test_unknown_native_blocks_other_native_and_its_action(self):
+        self.init(tasks=[task('A'), task('B')])
+        self.intent('A')
+        self.observe('A', 'processing')
+        self.observe('A', 'unknown')
+        with self.assertRaisesRegex(ValueError, 'active submission'):
+            self.intent('B')
+        self.assertFalse(any(x['action'] == 'readback_then_one_submit'
+                             for x in journal.next_actions(self.record())))
+
+    def test_parallel_native_submission_limit_remains_episode_wide(self):
+        auth = dict(AUTH, max_submissions=1)
+        self.init(authorization=auth, tasks=[task('A'), task('B')])
+        self.intent('A')
+        self.observe('A', 'processing')
+        with self.assertRaisesRegex(ValueError, 'submission limit'):
+            self.intent('B')
+
+    def test_parallel_native_cost_limit_counts_processing_job(self):
+        self.init(authorization=dict(AUTH, max_cost=100, currency='credits'),
+                  tasks=[task('A'), task('B')])
+        first = self.visible('A')
+        first['cost_quote'] = dict(amount=60, currency='credits', evidence='SIMULATION quote')
+        self.intent('A', first)
+        self.observe('A', 'processing')
+        second = self.visible('B')
+        second['cost_quote'] = dict(amount=50, currency='credits', evidence='SIMULATION quote')
+        with self.assertRaisesRegex(ValueError, 'cost limit'):
+            self.intent('B', second)
+        self.assertIsNone(self.record()['tasks']['B']['intent'])
+
+    def test_processing_native_does_not_unlock_extension_submission(self):
+        self.init(tasks=[task('A'), task('N'), task('E', 'extend', source_task='N')])
+        self.complete_native()
+        self.check_source()
+        self.intent('A')
+        self.observe('A', 'processing')
+        with self.assertRaisesRegex(ValueError, 'active submission'):
+            self.intent('E')
+        self.assertFalse(any(x.get('task') == 'E' and x['action'] == 'readback_then_one_submit'
+                             for x in journal.next_actions(self.record())))
+
+    def test_processing_extension_keeps_next_native_waiting(self):
+        self.init(tasks=[task('N'), task('E', 'extend', source_task='N'), task('B')])
+        self.complete_native()
+        self.check_source()
+        self.intent('E')
+        self.observe('E', 'processing')
+        with self.assertRaisesRegex(ValueError, 'active submission'):
+            self.intent('B')
+        self.assertFalse(any(x.get('task') == 'B' and x['action'] == 'readback_then_one_submit'
+                             for x in journal.next_actions(self.record())))
+
     def test_finite_unknown_lookup_exceptions_return_decision_without_resubmission(self):
         self.init()
         self.intent('N')

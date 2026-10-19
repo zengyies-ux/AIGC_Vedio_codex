@@ -105,8 +105,19 @@ def inspect(text, max_shot_seconds=2.5, generation_mode=None):
         target.append({'code': code, 'detail': detail})
     blocks = re.findall(r'```text\s*\n(.*?)```', text, re.S)
     blocks = [b for b in blocks if '【生成任务】' in b and '【镜头设计】' in b]
+    markers = list(re.finditer(r'^##[ \t]+唯一可复制正文[ \t]*$', text, re.M))
+    if len(markers) > 1:
+        blocks = []
+    elif markers:
+        section = re.split(r'^#{1,6}[ \t]+', text[markers[0].end():], maxsplit=1, flags=re.M)[0]
+        # Accept the real production heading format as well as the template's
+        # fenced body. Do not infer a body from arbitrary unmarked prose.
+        if '```' not in section and '【生成任务】' in section and '【镜头设计】' in section:
+            blocks.append(section.strip())
+    if any(b.count('【生成任务】') != 1 or b.count('【镜头设计】') != 1 for b in blocks):
+        blocks = []
     if len(blocks) != 1:
-        return {'structural_pass': False, 'errors': [{'code': 'body_count', 'detail': '需要唯一可复制text正文'}], 'warnings': [], 'shots': [], 'visual_quality': 'not_assessed', 'source_continuity': 'not_assessed',
+        return {'structural_pass': False, 'errors': [{'code': 'body_count', 'detail': '需要唯一text代码块或“## 唯一可复制正文”下的明确正文'}], 'warnings': [], 'shots': [], 'visual_quality': 'not_assessed', 'source_continuity': 'not_assessed',
                 'episode_budget': assess_episode_budget(), 'source_reference': source_reference,
                 'declared_generation_seconds': None}
     body = blocks[0]

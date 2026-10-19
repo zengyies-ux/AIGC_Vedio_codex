@@ -47,6 +47,32 @@ class PromptChecks(unittest.TestCase):
         self.assertFalse(inspect('只有摘要')['structural_pass'])
         unfenced = sample().replace('```text\n', '').replace('```', '')
         self.assertIn('body_count', self.codes(unfenced))
+
+    def test_production_heading_body_matches_fenced_body(self):
+        fenced = sample()
+        marked = fenced.replace('```text\n', '## 唯一可复制正文\n\n').replace('```', '')
+        self.assertEqual(inspect(marked), inspect(fenced))
+        self.assertTrue(inspect(marked + '\n## 内部记录\n不是正文\n')['structural_pass'])
+        self.assertIn('shot_too_long', self.codes(marked.replace('0–2秒', '0–2.6秒')))
+
+    def test_ambiguous_or_malformed_marked_bodies_fail_closed(self):
+        marked = sample().replace('```text\n', '## 唯一可复制正文\n').replace('```', '')
+        for text in [marked + '\n' + marked, sample() + '\n' + marked,
+                     marked + '\n【生成任务】\n第二份正文',
+                     marked.replace('【生成任务】', '```text\n【生成任务】')]:
+            with self.subTest(text=text[:60]):
+                self.assertIn('body_count', self.codes(text))
+
+    def test_cli_accepts_production_heading_without_modifying_file(self):
+        script = Path(__file__).with_name('check_prompt.py')
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / 'prompt.md'
+            content = sample().replace('```text\n', '## 唯一可复制正文\n').replace('```', '')
+            path.write_text(content, encoding='utf-8')
+            result = subprocess.run([sys.executable, str(script), str(path)], capture_output=True, text=True)
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertTrue(json.loads(result.stdout)[0]['structural_pass'])
+            self.assertEqual(path.read_text(encoding='utf-8'), content)
     def test_other_explicit_upper_limit(self):
         self.assertTrue(inspect(sample(((0,5.6),)),6)['structural_pass'])
         text=sample(((0,2.501),(2.501,5)))

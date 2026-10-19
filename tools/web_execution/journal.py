@@ -163,8 +163,14 @@ def _begin_submission(record, task_id, visible, live=True):
     t = record['tasks'][task_id]
     if t['status'] != 'prepared' or t['intent'] is not None:
         raise ValueError('Already attempted or unresolved; inspect queue/history, never retry automatically')
-    if any(row['status'] in ACTIVE for row in record['tasks'].values()):
+    active = [row for row in record['tasks'].values() if row['status'] in ACTIVE]
+    if any(row['status'] in ('submit_intent', 'unknown') for row in active):
         raise ValueError('Reconcile the active submission before another click')
+    # A confirmed processing native job may coexist with another independent
+    # native submission in this SAME record. Unresolved clicks still stop all
+    # new submissions; extensions retain the sequential source workflow.
+    if active and (t['mode'] != 'native' or any(row['mode'] != 'native' for row in active)):
+        raise ValueError('Reconcile the active submission before extension-related work')
     _identity(record, t, visible)
     parameters = {k: t[k] for k in ('model', 'resolution', 'seconds')}
     if 'aspect_ratio' in t:
@@ -265,16 +271,25 @@ def _observe(record, task_id, status, evidence, identity, result=None, receipt=N
 def next_actions(record):
     if record['paused']:
         return [{'action': 'reconcile_user_takeover', 'reason': 'Stop writes; read existing cards, assets and queue'}]
+    unresolved = [(key, t) for key, t in record['tasks'].items()
+                  if t['status'] in ('submit_intent', 'unknown')]
+    if unresolved:
+        key, t = next(((key, t) for key, t in unresolved if t['attention']), unresolved[0])
+        if t['attention']:
+            return [dict(task=key, action='user_decision', reason=t['attention'])]
+        return [dict(task=key, action='lookup_or_wait', wait_seconds=30,
+                     reason='Reconcile unresolved click before any new submission; no retry')]
+    processing = [t for t in record['tasks'].values() if t['status'] == 'processing']
     actions = []
     for key, t in record['tasks'].items():
-        if t['status'] in ACTIVE:
-            if t['attention']:
-                return [dict(task=key, action='user_decision', reason=t['attention'])]
-            return [dict(task=key, action='lookup_or_wait', wait_seconds=30,
-                         reason='Only normal visible queue/history proves outcome; no retry')]
+        if t['status'] == 'processing':
+            actions.append(dict(task=key, action='lookup_or_wait', wait_seconds=30,
+                                reason='Only normal visible queue/history proves outcome; no retry'))
         if t['status'] == 'failed':
             actions.append(dict(task=key, action='user_decision', reason='No automatic failed retry'))
         elif t['status'] == 'prepared':
+            if processing and (t['mode'] != 'native' or any(row['mode'] != 'native' for row in processing)):
+                continue
             source = record['tasks'].get(t.get('source_task'))
             if source and source['status'] == 'failed':
                 actions.append(dict(task=key, action='blocked_by_source', reason='Source failed; user decision'))
