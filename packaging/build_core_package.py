@@ -23,6 +23,7 @@ RELEASES_DIR = REPO_ROOT / "releases"
 CORE_FILES = [
     "AGENTS.md",
     "NEW_PROJECT_CONVERSATION_PROMPT.md",
+    "ASSET_DOWNLOAD_PROMPT.txt",
     "QUICK_START.md",
     "DEPLOYMENT.md",
     "WINDOWS_BROWSER_TROUBLESHOOTING.md",
@@ -138,7 +139,7 @@ def validate_package(package_root: Path) -> dict[str, int]:
         if path.name in forbidden_names or any(part in forbidden_parts for part in relative.parts):
             errors.append(f"forbidden file: {relative}")
 
-    for path in markdown_files:
+    for path in markdown_files + [p for p in files if p.suffix.lower() == ".txt"]:
         text = path.read_text(encoding="utf-8")
         relative = path.relative_to(package_root)
         if ABSOLUTE_PATH_RE.search(text):
@@ -203,7 +204,10 @@ def main() -> None:
     config = json.loads((PACKAGING_DIR / "package_config.json").read_text(encoding="utf-8"))
     metadata_name = metadata_filename(config.get("release_status", "release"))
     folder_name = f"{config['package_name']}_v{config['version']}"
-    archive_name = f"{folder_name}_{config['release_date']}.zip"
+    suffix = config.get("archive_suffix", "")
+    if suffix not in {"", "_release"}:
+        raise ValueError("Unsupported archive suffix")
+    archive_name = f"{folder_name}_{config['release_date']}{suffix}.zip"
     archive_path = RELEASES_DIR / archive_name
 
     with tempfile.TemporaryDirectory(prefix="seedance_core_package_") as temp_dir:

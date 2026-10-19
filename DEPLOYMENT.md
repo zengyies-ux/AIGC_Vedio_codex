@@ -4,12 +4,12 @@
 
 ## 先辨版本与目录
 
-本工作树为V3.8／Core1.8.5候选，继承1.7.3音频与网页执行基线；正式推荐仍按下文Core1.7.3。只有用户明确选择测试候选时，才按实际候选提交、本机包和`releases/candidate.json`核对部署，`release_status`必须标候选，不能把候选包或分支名称当成已发布Release。候选部署可用下文相同校验／升级保护步骤，但来源版本必须对应；先核远端是否已有该提交，不猜候选tag或下载URL。
+当前正式推荐为V3.8／Core1.8.5，发行标签`core-v1.8.5`，专用核心包为`Seedance_Codex_Workflow_Core_v1.8.5_2026-10-19_release.zip`。同版本早期候选包保留，仅名称相似不能当作本次正式包；必须核包名、标签、清单和`release_status=release`。
 
-仓库：https://github.com/zengyies-ux/AIGC_Vedio_codex 。当前明确推荐的发行包是[Core1.7.3](https://github.com/zengyies-ux/AIGC_Vedio_codex/releases/tag/core-v1.7.3)，标签`core-v1.7.3`。该1.7.3版本已正式发布；当前Mac环境有真实整集自动链与用户认可，Windows x64 CPU提供部署和适配；用户本轮确认Core1.7.2实操无问题，属用户反馈。Core1.7.3入库修订与V3.8在线及镜头规则仍需分别验证，硬件、耗时与异常恢复能力未由此全面核验。发布状态不等于所有平台均已验收。
+仓库：https://github.com/zengyies-ux/AIGC_Vedio_codex 。从[Core1.8.5正式Release](https://github.com/zengyies-ux/AIGC_Vedio_codex/releases/tag/core-v1.8.5)获取附件。Mac已有五集制作样本，包含用户补充与确认；原生、延长、资产下载归档及绑定按各自真实证据记录，不宣称五集全程无人工。Windows x64 CPU提供部署适配，用户确认Core1.7.2实操可用；1.8.5在线资产等新增能力仍待Windows真机增量验证。发布状态不等于所有平台或所有画面已验收。
 
-- 从明确标签`core-v1.7.3`读取`packaging/package_config.json`、`releases/latest.json`及本部署说明，下载Release专用核心ZIP与同名SHA文件。包名应为`Seedance_Codex_Workflow_Core_v1.7.3_2026-10-17.zip`，内容版本与清单须一致。记录实际tag提交与哈希，不把候选分支或未核的latest自动当推荐版。
-- `main`保留历史代码；默认首页只作当前发布导航。不要clone旧main后直接运行旧规则，也不使用GitHub自动生成的Source code ZIP作为团队制作包。源码开发目录与干净Core制作目录分开；候选版只有用户明确要求才使用。
+- 从固定标签`core-v1.8.5`读取`packaging/package_config.json`、`releases/latest.json`及本说明，下载上述正式ZIP与同名SHA文件，核内容版本、清单、实际tag提交和哈希。不把旧候选或未核的latest当正式版。
+- `main`首页只作正式发布导航；源码开发目录与干净Core制作目录分开，不clone历史main后直接运行旧规则，不使用GitHub自动生成的Source code ZIP替代专用核心包。候选版须用户明确选择并核其实际状态。
 - 用户没给安装目录时，在本机文档目录选清楚命名的新目录；已有项目不得覆盖。Windows路径使用本机实际盘符与反斜杠，含空格路径正确引用，不要求用户改成Unix路径或手工设置PATH。
 
 ## 获取、校验与安装
@@ -23,7 +23,7 @@
 
 ## 自动准备与自检范围
 
-先读[音频工具说明](tools/local_audio/README.md)。V3.7／Core1.7.3保留已验Mac arm64英文MLX，提供Windows x64英文CPU预览适配（faster-whisper1.2.1／CTranslate2 4.8.3／int8）。两平台用各自Python3.12锁文件，模型／转写缓存分后端，用户项目与原音轨不动。用户确认Windows1.7.2实操可用；未提供的硬件、性能及异常恢复细节仍以本机实际自检记录，不称全平台稳定。
+先读[音频工具说明](tools/local_audio/README.md)。Core1.8.5沿用已验Mac arm64英文MLX，提供Windows x64英文CPU预览适配（faster-whisper1.2.1／CTranslate2 4.8.3／int8）。两平台用各自Python3.12锁文件，模型／转写缓存分后端，用户项目与原音轨不动。用户确认Windows1.7.2实操可用；未提供的硬件、性能及异常恢复细节仍以本机实际自检记录，不称全平台稳定。
 
 Codex先定位Python3.12；Windows优先用`py -3.12`，Mac优先已有项目环境或`python3.12`。缺少时由Codex通过本机可用的官方／常规渠道准备独立运行时，例如Windows可用winget的`Python.Python.3.12`用户安装；安装后重新定位实际解释器，用户只处理必要正常系统弹窗。不改系统Python或要求用户手配环境。
 
@@ -37,7 +37,7 @@ Codex先定位Python3.12；Windows优先用`py -3.12`，Mac优先已有项目环
 
 自检包含依赖版本、运行时导入、内置decoder和临时WAV；`--prepare-model`核固定模型。用户已有本集音轨时，再由Codex加`--audio <真实MP3/WAV绝对路径>`核真实转写、缓存、耗时及词表；不要为部署强行处理历史项目，不把导入／模拟当真实音频通过。正文、JSON及日志使用UTF-8，实际中文用户名／空格路径和Windows占用恢复仍须真机验证。CPU性能按真机记录，不承诺硬件无关速度。
 
-Windows可以原生PowerShell使用Codex，也可选WSL2，见[官方Windows说明](https://learn.chatgpt.com/docs/windows/windows-app)；本版Windows预览优先原生x64 CPU。用户已有Windows1.7.2实际制作成功反馈；新电脑的安装、模型下载恢复、CPU资源与文件占用等具体条件仍按本机验证，不能用旧版、Mac或模拟结果冒充本候选在线入口及画面质量通过。
+Windows可以原生PowerShell使用Codex，也可选WSL2，见[官方Windows说明](https://learn.chatgpt.com/docs/windows/windows-app)；本版Windows预览优先原生x64 CPU。用户已有Windows1.7.2实际制作成功反馈；新电脑的安装、模型下载恢复、CPU资源与文件占用等具体条件仍按本机验证，不能用旧版、Mac或模拟结果冒充1.8.5新增在线入口及画面质量通过。
 
 新安装保持Codex应用／用户配置默认位置，已有自定义配置先识别，不自动重置；本工作流和材料仍可使用用户指定的D盘目录。网页默认使用Codex内置浏览器，在线取图与制作保持同一浏览器会话；Windows当前版本支持时可用Ctrl+T打开标签页（以当前界面为准），提前在同一会话登录制作网站，使用飞书在线材料时才登录飞书。用户明确指定其他浏览器时才改变；内置浏览器工具不可用先报告，不因外部浏览器已登录自动换用。当前聊天连接失败先按[会话异常处理](WINDOWS_BROWSER_TROUBLESHOOTING.md#session-recovery)区分缺标签、工具错误与明确拒绝；同项目新聊天读取诊断有成功案例，但不保证修复。只有浏览器入口缺失且日志指向内置插件清单时，才用Windows条件式修复，不默认执行复制。
 
@@ -53,4 +53,4 @@ Windows可以原生PowerShell使用Codex，也可选WSL2，见[官方Windows说�
 | 音频 | 系统／架构／Python、依赖／decoder／Metal／模型是否就绪，实际做过的转写或待适配项 |
 | 浏览器 | 工具是否连接、登录／页面是否可读，未提供URL则未核；不把技能安装当连接成功 |
 
-给出[完整制作启动词](NEW_PROJECT_CONVERSATION_PROMPT.md)，请组员随后只放材料、指定集数和个人想法。记录真实耗时与必要人工介入；未验证项明确留待实际任务，不称完整新机／新一集链路已验收。
+给出[完整制作启动词](NEW_PROJECT_CONVERSATION_PROMPT.md)；仅收集资产时使用[独立资产收集词](ASSET_DOWNLOAD_PROMPT.txt)。请组员随后只放材料、指定集数和个人想法。记录真实耗时与必要人工介入；未验证项明确留待实际任务，不称完整新机／新一集链路已验收。

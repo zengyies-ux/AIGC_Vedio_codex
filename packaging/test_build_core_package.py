@@ -11,6 +11,13 @@ import build_core_package as builder
 
 
 class MetadataRoutingTests(unittest.TestCase):
+    def test_asset_prompt_cannot_leak_a_local_path(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / "ASSET_DOWNLOAD_PROMPT.txt").write_text("/Users/private/project", encoding="utf-8")
+            with self.assertRaisesRegex(RuntimeError, "absolute local path"):
+                builder.validate_package(root)
+
     def test_status_routes(self):
         self.assertEqual(builder.metadata_filename("release"), "latest.json")
         for status in ("local_candidate", "branch_candidate"):
@@ -48,11 +55,16 @@ class MetadataRoutingTests(unittest.TestCase):
                 self.assertEqual(second["release_status"], "local_candidate")
                 self.assertEqual((releases / "latest.json").read_bytes(), original)
                 self.assertEqual((releases / "old.zip").read_bytes(), b"keep previous release")
+                candidate_bytes = (releases / first["archive"]).read_bytes()
                 config["release_status"] = "release"
+                config["archive_suffix"] = "_release"
                 (pkg / "package_config.json").write_text(json.dumps(config), encoding="utf-8")
                 with contextlib.redirect_stdout(io.StringIO()):
                     builder.main()
-                self.assertEqual(json.loads((releases / "latest.json").read_text())["release_status"], "release")
+                published = json.loads((releases / "latest.json").read_text())
+                self.assertEqual(published["release_status"], "release")
+                self.assertNotEqual(published["archive"], first["archive"])
+                self.assertEqual((releases / first["archive"]).read_bytes(), candidate_bytes)
 
 
 if __name__ == "__main__":

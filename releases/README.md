@@ -2,9 +2,11 @@
 
 这里保存用户明确要求发布的干净核心学习包。
 
-**当前正式发布：[Core1.7.3](https://github.com/zengyies-ux/AIGC_Vedio_codex/releases/tag/core-v1.7.3)**。Windows浏览器准备、条件式故障排查、素材库三层核对与完整启动词已入包；Mac完整链获用户认可，Windows已有用户反馈的网页操作，修订流程与完整链仍待真机验证。以下各版本说明均为历史时点。
+**当前正式发布：[Core1.8.5](https://github.com/zengyies-ux/AIGC_Vedio_codex/releases/tag/core-v1.8.5)**。标签`core-v1.8.5`，正式包`Seedance_Codex_Workflow_Core_v1.8.5_2026-10-19_release.zip`；保留同号旧候选及历史附件，按完整文件名与`release_status`区分。Mac已有五集制作样本及42图下载归档证据，样本含用户补充与确认；Windows Core1.7.2已有用户实操确认，本版在线等新增能力仍待Windows增量验证。自动审片、三次返修及同聊天2—3集属于下一候选，未包含在1.8.5。
 
-- `latest.json`记录当前版本、文件名、文件数、体积和SHA-256。
+以下各版本说明均为历史时点；其中“当前”“latest”及待验状态仅描述当时，不替代本页顶部正式版本与[V3.8核验](../validation/director_v38.md)。
+
+- `latest.json`记录当前正式构建的版本、文件名、文件数、体积和SHA-256；远端发布和附件仍须实际回读。`candidate.json`单独保留候选构建记录。
 - 同名`.zip.sha256`用于校验压缩包完整性。
 - 不自动重新打包；只有用户明确要求更新时，才通过`packaging/build_core_package.py`发布新版本。
 - 历史项目、素材、审片、旧提示词、旧2.0 Skill和团队SOP不会进入核心包。
