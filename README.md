@@ -4,6 +4,8 @@
 
 **当前正式推荐：Core 1.8.5 · V3.8**
 
+本地工作树现为Core1.8.6候选，新增主动审片、最多三次修正及明确指定2—3集的连续制作，待真实任务验证；下方固定链接仍指向正式1.8.5。
+
 [使用SOP](https://github.com/zengyies-ux/AIGC_Vedio_codex/blob/core-v1.8.5/QUICK_START.md) · [完整制作启动词](https://github.com/zengyies-ux/AIGC_Vedio_codex/blob/core-v1.8.5/NEW_PROJECT_CONVERSATION_PROMPT.md) · [独立资产收集词](https://github.com/zengyies-ux/AIGC_Vedio_codex/blob/core-v1.8.5/ASSET_DOWNLOAD_PROMPT.txt) · [下载正式版](https://github.com/zengyies-ux/AIGC_Vedio_codex/releases/tag/core-v1.8.5)
 
 ## 开始使用

@@ -10,7 +10,7 @@
 
 默认验证模式：新解读、分段/候选位置一次整体审核后出正式稿，已有采用阶段直接继承，不追加审批。用户明确授权当集自主制作时，在该范围内部核查后直接出稿并落盘授权，不因升级失效，也不据此启用全局常规模式；自主前置与网页准备／生成授权分别记录，见[交付与续做](memories/seedance_workflow/continuity_and_review.md#execution-handoff)。用户认可流程/效果并落盘启用常规模式后，内部核查采用出稿；沉默、文档验收或发布不切模式。资产缺失、输入冲突或无法内解问题才问，少确认不省设计。
 
-当前工作树为V3.8／Core1.8.5正式版，基于Core1.7.3演进。变更、实际制作反馈与待验见[V3.8核验](validation/director_v38.md)，各平台范围见[部署说明](DEPLOYMENT.md)。用户只填材料目录；工作流位置由当前项目识别，不把二者混同。以连续旁白含义、台词与人物目的设计场面，再选择看清行动／回应的镜头，不先排无关画面再找词对应。有明确冲突时，按人物对待对方的态度与目的，组织身体、物件、空间或社交交锋；正文默认自然动作短句，保对象、力度与结果；普通肢体动作不写关节／重心／支撑分解，仅关键交接或具体穿帮补必要细节；细则唯一见[冲突场面](memories/seedance_workflow/director_os.md#conflict-staging)。声音连续，按行动与回应切镜；长台词跨镜，见[声音跨镜](memories/seedance_workflow/execution_rules.md#audio-shot-independence)。
+当前工作树为V3.8／Core1.8.6本地候选，正式推荐为Core1.8.5。候选新增主动审片、有界修正和明确指定2—3集的连续制作，新链仍待实测。变更、实际制作反馈与待验见[V3.8核验](validation/director_v38.md)，各平台范围见[部署说明](DEPLOYMENT.md)。用户只填材料目录；工作流位置由当前项目识别，不把二者混同。以连续旁白含义、台词与人物目的设计场面，再选择看清行动／回应的镜头，不先排无关画面再找词对应。有明确冲突时，按人物对待对方的态度与目的，组织身体、物件、空间或社交交锋；正文默认自然动作短句，保对象、力度与结果；普通肢体动作不写关节／重心／支撑分解，仅关键交接或具体穿帮补必要细节；细则唯一见[冲突场面](memories/seedance_workflow/director_os.md#conflict-staging)。声音连续，按行动与回应切镜；长台词跨镜，见[声音跨镜](memories/seedance_workflow/execution_rules.md#audio-shot-independence)。
 
 从原材料开始的同类完整单集默认A剧本／冲突、B声音／时间、C资产／空间、D视觉导演／目标观众四项职责协作，模型均为GPT-6.1-sol；A／B／C既有high、D low，当次明确设置优先。D优先在前序交回后独立承担视觉职责，分段前提案、初稿后复审各一次；实际执行者／转任和采用变化沿现有记录说明，主控对删改后的持续语义、动作和空间负责；沿用采用设计、自带正式稿、小修或用户指定单智能体不强制补齐协作角色，容量不可用不无限重试，见[协作职责](memories/seedance_workflow/director_os.md#collaboration)。
 
@@ -39,6 +39,7 @@
 - 继续指定项目：从[项目索引](memories/seedance_workflow/projects/INDEX.md)定位，读 `production_state.md` 中工作模式、当前输入与采用来源；按链接读当前文本、`prompts/INDEX.md`及必要资产。固定设定按需读 `project_overview.md`。
 - 新项目：从[项目模板](memories/seedance_workflow/projects/PROJECT_TEMPLATE.md)建立独立目录；不带入旧角色、剧情和图片编号。
 - 继续继承采用稿，返修保有效部分；独立重测从原始输入设计，不继承旧未采用时轴、预算或补图。新结果独立保存，采用后切入口，见[恢复规则](memories/seedance_workflow/continuity_and_review.md#task-recovery)。接续查实际合格源，不用计划终态代填。
+- 用户明确让同一聊天制作连续2—3集时，按集顺序推进，共用已核全剧与资产；音频、预算、采用稿、网页和日志分集，连续剧情继承有依据的人物／伤势／持物与空间状态，不要求用户填额外表格。
 - 不同集默认以对应角色／阶段／场景资产独立原生制作，不等前集成片或末态；仅用户明确要求跨集连续动作／延长才建立源依赖，见[生成方式](memories/seedance_workflow/continuity_and_review.md#generation-choice)。同集必要接续保留。
 - 只处理指定范围，已读未变规则不重载。
 
@@ -83,6 +84,6 @@
 
 `production_state.md`只维护任务与工作模式、输入版本、音频采用来源、方案认可、采用链接、必要实拍末态及未决事项；`project_overview.md`保存稳定设定；`assets/README.md`保存真实资产；`prompts/INDEX.md`保存当前文本与实际采用关系。旧过程进已有复盘并链接，不叠“最新”或每轮建快照/交接。满意、止损可用、仅文字完成、生成成功与未知须区分。
 
-原剧本、素材、旧稿与失败证据不覆盖。反馈先修本项目，偏好留项目；有依据才更新唯一核心位置，用户新决定立即按范围执行。完整维护见[接续与反馈](memories/seedance_workflow/continuity_and_review.md#feedback-maintenance)。项目结束标明无活动任务，索引链接状态页。
+生成后主动审片及有界修正按[唯一审片政策](memories/seedance_workflow/continuity_and_review.md#review-and-repair)执行；本任务明确授权自动修正时，同段连续修正最多3次，初次不计，第三次仍有关键错误先请用户核查。轻微可剪问题保留，未知点击先核回执。原剧本、素材、旧稿与失败证据不覆盖。反馈先修本项目，偏好留项目；有依据才更新唯一核心位置，用户新决定立即按范围执行。完整维护见[接续与反馈](memories/seedance_workflow/continuity_and_review.md#feedback-maintenance)。项目结束标明无活动任务，索引链接状态页。
 
 `Skill/seedance2-skill-main/`及历史项目不默认读；方法、官方能力、平台约束与反馈分别标来源。

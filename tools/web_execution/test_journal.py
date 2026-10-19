@@ -471,5 +471,363 @@ class JournalBehaviorTests(unittest.TestCase):
         self.event('pause', reason='SIMULATION: next process can acquire the lock')
 
 
+
+class ReviewRepairTests(unittest.TestCase):
+    # Share fixtures without duplicating the existing behavior tests.
+    setUp = JournalBehaviorTests.setUp
+    event = JournalBehaviorTests.event
+    init = JournalBehaviorTests.init
+    record = JournalBehaviorTests.record
+    identity = JournalBehaviorTests.identity
+    visible = JournalBehaviorTests.visible
+    intent = JournalBehaviorTests.intent
+    result = JournalBehaviorTests.result
+    observe = JournalBehaviorTests.observe
+    complete_native = JournalBehaviorTests.complete_native
+    check_source = JournalBehaviorTests.check_source
+    def auto_init(self, tasks=None):
+        return self.init(authorization={**AUTH, 'review_required': True, 'auto_repair': True}, tasks=tasks)
+
+    def review(self, key, outcome='critical', **extra):
+        data = dict(task_id=key, outcome=outcome, evidence='SIMULATION: inspected actual result and sound',
+                    result_key=self.record()['tasks'][key].get('result', {}).get('key') if self.record()['tasks'][key].get('result') else None)
+        result = self.record()['tasks'][key].get('result')
+        if result:
+            data['coverage'] = {'visual': [[0, result['actual_seconds']]], 'audio': [[0, result['actual_seconds']]], 'limitations': ''}
+        if outcome == 'critical':
+            data.update(issue='wrong shoulder injury', cause='prompt', plan='Correct injury placement; preserve dialogue')
+        data.update(extra)
+        return self.event('review', **data)
+
+    def repair(self, previous, key, **extra):
+        old = self.record()['tasks'][previous]
+        replacement = task(key, mode=old['mode'], seconds=old['seconds'],
+                           **({'source_task': old['source_task']} if old['mode'] == 'extend' else {}))
+        return self.event('repair', task_id=previous, replacement=replacement,
+                          evidence='SIMULATION: local correction, adopted event and sound unchanged',
+                          dialogue_unchanged=True, **extra)
+
+    def test_auto_review_is_required_and_minor_is_not_regenerated(self):
+        self.auto_init(tasks=[task('N')])
+        self.complete_native()
+        self.assertEqual(journal.next_actions(self.record())[0]['action'], 'review_result')
+        self.review('N', 'minor')
+        self.assertEqual(journal.next_actions(self.record()), [{'action': 'record_results_complete'}])
+        with self.assertRaises(ValueError): self.repair('N', 'N2')
+
+    def test_three_repairs_persist_across_versions_issue_names_and_restarts(self):
+        self.auto_init(tasks=[task('N')]); self.complete_native(); self.review('N')
+        parent = 'N'
+        for number in range(1, 4):
+            key = 'N' + str(number)
+            self.repair(parent, key)
+            self.assertEqual(journal._repair_count(self.record(), self.record()['tasks'][key]), number-1)
+            self.intent(key)
+            self.observe(key, 'result', result=self.result(key))
+            self.review(key, issue='renamed problem ' + str(number))
+            self.assertEqual(journal._repair_count(journal.read(self.path), self.record()['tasks'][key]), number)
+            parent = key
+        with self.assertRaises(ValueError): self.repair(parent, 'N4')
+        self.assertEqual(journal.next_actions(self.record())[0]['action'], 'user_decision')
+        self.assertEqual(len(self.record()['tasks']), 4)
+
+    def test_unknown_outcome_and_unknown_review_never_repair(self):
+        self.auto_init(tasks=[task('N'), task('Other')]); self.complete_native(); self.review('N')
+        self.intent('Other'); self.observe('Other', 'unknown')
+        with self.assertRaises(ValueError): self.repair('N', 'N2')
+        with self.assertRaises(ValueError): self.repair('Other', 'Other2')
+        with self.assertRaises(ValueError): self.event('history_reconcile', task_id='N', prior_repair_attempts=0, evidence='SIMULATION: pending unknown cannot be cleared')
+        self.observe('Other', 'result', result=self.result('Other')); self.review('Other', 'unknown')
+        with self.assertRaises(ValueError): self.repair('Other', 'Other2')
+
+    def test_no_repair_without_explicit_authorization_or_dialogue_preservation(self):
+        self.init(tasks=[task('N')]); self.complete_native(); self.review('N')
+        with self.assertRaises(ValueError): self.repair('N', 'N2')
+        self.event('authorize', authorization={**AUTH, 'review_required': True, 'auto_repair': True},
+                   current=journal.snapshot(self.record()), evidence='SIMULATION: explicit bounded repair authorization')
+        with self.assertRaises(ValueError):
+            self.event('repair', task_id='N', replacement=task('N2'), evidence='SIMULATION', dialogue_unchanged=False)
+
+    def test_blocker_attribution_does_not_trigger_repeated_generation(self):
+        self.auto_init(tasks=[task('N')]); self.complete_native()
+        for cause in ('asset', 'access', 'balance', 'unknown'):
+            self.review('N', cause=cause)
+            with self.assertRaises(ValueError): self.repair('N', 'N2')
+        self.assertEqual(journal.next_actions(self.record())[0]['action'], 'user_decision')
+
+    def test_failed_platform_submission_can_repair_only_after_attributed_review(self):
+        self.auto_init(tasks=[task('N')]); self.intent('N'); self.observe('N', 'failed')
+        with self.assertRaises(ValueError): self.repair('N', 'N2')
+        self.review('N', cause='platform_transient', plan='Visible transient error cleared; resubmit same adopted request')
+        self.repair('N', 'N2'); self.intent('N2')
+        self.assertEqual(self.record()['tasks']['N']['status'], 'failed')
+
+    def test_extension_repair_reuses_native_but_never_extension_result(self):
+        self.auto_init(); self.complete_native(); self.review('N', 'usable'); self.check_source()
+        self.intent('E'); self.observe('E', 'result', result=self.result('E', extension_count=1)); self.review('E')
+        self.repair('E', 'E2'); self.check_source('E2')
+        visible = self.visible('E2')
+        with self.assertRaises(ValueError): self.intent('E2', visible)
+        visible['source_input'].update(native_origin=True, replaces_task='E')
+        self.intent('E2', visible)
+        self.assertEqual(self.record()['tasks']['E2']['source_task'], 'N')
+        self.assertEqual(journal._repair_count(self.record(), self.record()['tasks']['E2']), 1)
+        with self.assertRaises(ValueError):
+            self.event('repair', task_id='E', replacement=task('Bad', 'extend', source_task='E'), evidence='SIMULATION', dialogue_unchanged=True)
+
+    def test_repaired_native_rebinds_only_unsubmitted_extension_and_rechecks_source(self):
+        self.auto_init(); self.complete_native(); self.review('N'); self.repair('N', 'N2')
+        self.intent('N2'); self.observe('N2', 'result', result=self.result('N2')); self.review('N2', 'usable')
+        self.event('rebind_source', task_id='E', source_task='N2', current=journal.snapshot(self.record()), evidence='SIMULATION: adopted new qualified native')
+        self.assertEqual(self.record()['tasks']['E']['source_task'], 'N2')
+        self.assertIsNone(self.record()['tasks']['E']['source_check'])
+        unbound = self.visible('N2'); unbound.update(self.identity('E'), seconds=25)
+        with self.assertRaises(ValueError): self.intent('E', unbound)
+        self.event('source_check', task_id='E', result_key='SIMULATED_RESULT_N2', qualified=True,
+                   interval=[0,25], evidence='SIMULATION: actual repaired endpoint', unextended=True)
+        self.intent('E')
+
+    def test_legacy_reconciliation_prevents_reset_and_counts_prior_logs(self):
+        self.init(tasks=[task('N')]); self.complete_native()
+        legacy=self.record(); legacy['schema']=1
+        journal.save(self.path, legacy)
+        self.event('authorize', authorization={**AUTH, 'review_required': True, 'auto_repair': True},
+                   current=journal.snapshot(self.record()), evidence='SIMULATION: reviewed current target')
+        self.review('N')
+        with self.assertRaises(ValueError): self.repair('N', 'N2')
+        self.event('history_reconcile', task_id='N', prior_repair_attempts=2, evidence='SIMULATION: old records A/B contain two correction intents, deduplicated')
+        self.repair('N', 'N2'); self.intent('N2'); self.observe('N2', 'result', result=self.result('N2')); self.review('N2')
+        with self.assertRaises(ValueError): self.repair('N2', 'N3')
+        with self.assertRaises(ValueError): self.event('history_reconcile', task_id='N', prior_repair_attempts=0, evidence='reset')
+
+    def test_repair_intent_save_failure_never_consumes_or_grants_click(self):
+        self.auto_init(tasks=[task('N')]); self.complete_native(); self.review('N'); self.repair('N','N2')
+        with patch.object(journal, 'save', side_effect=OSError('disk full')):
+            with self.assertRaises(OSError): self.intent('N2')
+        self.assertEqual(journal._repair_count(self.record(), self.record()['tasks']['N2']), 0)
+        self.assertIsNone(self.record()['tasks']['N2']['intent'])
+
+    def test_review_cannot_adopt_wrong_result_or_failed_media(self):
+        self.auto_init(tasks=[task('N')]); self.complete_native()
+        with self.assertRaises(ValueError): self.review('N', 'usable', result_key='other-result')
+
+    def test_reviewed_source_required_before_extension(self):
+        self.auto_init(); self.complete_native()
+        with self.assertRaises(ValueError): self.check_source()
+        self.review('N', 'usable'); self.check_source()
+        self.review('N')
+        with self.assertRaises(ValueError): self.intent('E')
+
+    def test_review_coverage_cannot_label_sampled_frames_or_missing_audio_fully_usable(self):
+        self.auto_init(tasks=[task('N')]); self.complete_native()
+        partial = {'visual': [[0, 1], [29, 30.048]], 'audio': [], 'limitations': 'Only two frame ranges; audio not inspected'}
+        with self.assertRaises(ValueError): self.review('N', 'usable', coverage=partial)
+        with self.assertRaises(ValueError): self.review('N', 'minor', coverage=partial)
+        self.review('N', 'unknown', coverage=partial)
+        self.assertFalse(self.record()['tasks']['N']['review']['coverage']['complete']['visual'])
+        self.assertEqual(journal.next_actions(self.record())[0]['action'], 'inspect_result')
+        with self.assertRaises(ValueError): self.repair('N','N2')
+        self.review('N', 'usable')
+
+    def test_replacement_extension_accepts_native_with_prior_candidate_history(self):
+        self.auto_init(); self.complete_native(); self.review('N','usable'); self.check_source()
+        self.intent('E'); self.observe('E','result',result=self.result('E',extension_count=1)); self.review('E')
+        self.repair('E','E2')
+        # Simulate reconciled visible original-native history having one branch.
+        state=self.record(); state['tasks']['N']['result']['extension_count']=1; journal.save(self.path,state)
+        self.check_source('E2')
+        visible=self.visible('E2'); visible['source_input'].update(native_origin=True,replaces_task='E')
+        self.intent('E2',visible)
+        self.assertEqual(self.record()['tasks']['E2']['mode'],'extend')
+        self.assertEqual(self.record()['tasks']['N']['mode'],'native')
+
+    def test_repair_cost_budget_counts_all_original_and_repair_attempts(self):
+        self.init(authorization={**AUTH,'review_required':True,'auto_repair':True,'max_cost':15,'currency':'credits'},tasks=[task('N')])
+        visible=self.visible('N'); visible['cost_quote']={'amount':10,'currency':'credits','evidence':'SIMULATION visible quote'}
+        self.intent('N',visible); self.observe('N','result',result=self.result('N')); self.review('N'); self.repair('N','N2')
+        visible=self.visible('N2'); visible['cost_quote']={'amount':10,'currency':'credits','evidence':'SIMULATION visible quote'}
+        with self.assertRaises(ValueError): self.intent('N2',visible)
+        self.assertEqual(journal._repair_count(self.record(),self.record()['tasks']['N2']),0)
+
+    def accept(self, key, **extra):
+        data=dict(task_id=key, result_key=self.record()['tasks'][key]['result']['key'],
+                  quote='SIMULATION HUMAN: I watched this video, accept the deviation and continue',
+                  source='SIMULATION: direct user message, never agent opinion',
+                  evidence='SIMULATION: user identifies this exact visible result')
+        data.update(extra)
+        return self.event('user_accept', **data)
+
+    def test_user_accepts_critical_result_without_erasing_defect_or_review(self):
+        self.auto_init(); self.complete_native(); self.review('N')
+        old=self.record()['tasks']['N']['review']
+        self.accept('N')
+        self.assertEqual(self.record()['tasks']['N']['review'], old)
+        self.assertEqual(self.record()['tasks']['N']['review']['outcome'], 'critical')
+        with self.assertRaises(ValueError): self.repair('N','N2')
+        self.assertIn({'task':'E','action':'check_source'},journal.next_actions(self.record()))
+        self.check_source(); self.intent('E')
+
+    def test_user_accepts_partial_ai_review_without_fabricating_full_coverage(self):
+        self.auto_init(); self.complete_native()
+        partial={'visual':[[29,30.048]],'audio':[],'limitations':'AI checked endpoint only; user watched and accepts full result'}
+        self.review('N','unknown',coverage=partial)
+        self.accept('N'); self.check_source(); self.intent('E')
+        review=self.record()['tasks']['N']['review']
+        self.assertEqual(review['outcome'],'unknown')
+        self.assertFalse(review['coverage']['complete']['audio'])
+        self.assertEqual(review['coverage']['audio'],[])
+
+    def test_user_accept_rejects_wrong_result_missing_quote_and_pending_submission(self):
+        self.auto_init(); self.complete_native(); self.review('N')
+        with self.assertRaises(ValueError): self.accept('N',result_key='different-result')
+        with self.assertRaises(ValueError): self.accept('N',quote='')
+        with self.assertRaises(ValueError):
+            self.event('user_accept',task_id='E',result_key='not-produced',quote='SIMULATION',source='SIMULATION human',evidence='SIMULATION')
+        self.assertNotIn('user_acceptance',self.record()['tasks']['N'])
+
+    def test_user_accept_does_not_override_unknown_submission_or_unqualified_local_seam(self):
+        self.auto_init(tasks=[task('N'),task('E','extend',source_task='N'),task('Other')])
+        self.complete_native(); self.review('N'); self.accept('N')
+        self.check_source(qualified=False)
+        with self.assertRaises(ValueError): self.intent('E')
+        self.check_source(); self.intent('Other'); self.observe('Other','unknown')
+        self.accept('N')
+        with self.assertRaises(ValueError): self.intent('E')
+        self.assertEqual(self.record()['tasks']['Other']['status'],'unknown')
+
+    def test_user_accepted_repaired_native_can_rebind_but_extension_cannot_be_source(self):
+        self.auto_init(); self.complete_native(); self.review('N'); self.repair('N','N2')
+        self.intent('N2'); self.observe('N2','result',result=self.result('N2')); self.review('N2'); self.accept('N2')
+        self.event('rebind_source',task_id='E',source_task='N2',current=journal.snapshot(self.record()),evidence='SIMULATION accepted actual repaired native')
+        self.assertIsNone(self.record()['tasks']['E']['source_check'])
+        self.accept('N'); self.accept('N2')
+        with self.assertRaises(ValueError):
+            self.event('rebind_source',task_id='E',source_task='N',current=journal.snapshot(self.record()),evidence='SIMULATION stale previous acceptance')
+        self.event('source_check',task_id='E',result_key='SIMULATED_RESULT_N2',qualified=True,interval=[0,25],evidence='SIMULATION actual endpoint',unextended=True)
+        self.intent('E'); self.observe('E','result',result=self.result('E',extension_count=1)); self.review('E'); self.accept('E')
+        with self.assertRaises(ValueError):
+            self.event('rebind_source',task_id='E',source_task='E',current=journal.snapshot(self.record()),evidence='SIMULATION cannot extend extension')
+
+    def test_user_accepts_older_result_stops_prepared_repair_without_erasing_attempts(self):
+        self.auto_init(tasks=[task('N')]); self.complete_native(); self.review('N'); self.repair('N','N2')
+        self.accept('N')
+        self.assertEqual(self.record()['tasks']['N']['superseded_by'],'N2')
+        self.assertEqual(self.record()['tasks']['N2']['status'],'prepared')
+        self.assertEqual(self.record()['accepted_results']['N'],'N')
+        with self.assertRaises(ValueError): self.intent('N2')
+        self.assertEqual(journal.next_actions(self.record()),[{'action':'record_results_complete'}])
+
+    def test_user_accepts_older_result_keeps_newer_processing_and_unknown_click(self):
+        self.auto_init(tasks=[task('N')]); self.complete_native(); self.review('N'); self.repair('N','N2')
+        self.intent('N2'); self.observe('N2','processing'); self.accept('N')
+        self.assertEqual(self.record()['tasks']['N2']['status'],'processing')
+        self.assertEqual(journal._repair_count(self.record(),self.record()['tasks']['N']),1)
+        self.assertEqual(journal.next_actions(self.record())[0]['action'],'lookup_or_wait')
+        self.observe('N2','unknown'); self.accept('N')
+        self.assertEqual(journal.next_actions(self.record())[0]['action'],'lookup_or_wait')
+        self.assertEqual(self.record()['tasks']['N2']['status'],'unknown')
+
+    def test_old_result_acceptance_reports_existing_downstream_without_rewrite(self):
+        self.auto_init(); self.complete_native(); self.review('N'); self.repair('N','N2')
+        self.intent('N2'); self.observe('N2','result',result=self.result('N2')); self.review('N2','usable')
+        self.event('rebind_source',task_id='E',source_task='N2',current=journal.snapshot(self.record()),evidence='SIMULATION repaired source')
+        self.event('source_check',task_id='E',result_key='SIMULATED_RESULT_N2',qualified=True,interval=[0,25],evidence='SIMULATION endpoint',unextended=True)
+        self.intent('E'); self.observe('E','processing'); self.accept('N')
+        actions=journal.next_actions(self.record())
+        self.assertTrue(any(item['action']=='review_existing_downstream' for item in actions))
+        self.assertTrue(any(item['action']=='lookup_or_wait' for item in actions))
+        self.assertEqual(self.record()['tasks']['E']['source_task'],'N2')
+        self.assertEqual(self.record()['tasks']['E']['status'],'processing')
+
+    def test_explicit_user_adds_one_repair_after_three_without_reset_or_replay(self):
+        self.auto_init(tasks=[task('N')]); self.complete_native(); self.review('N')
+        previous='N'
+        for number in range(1,4):
+            key='N'+str(number); self.repair(previous,key); self.intent(key)
+            self.observe(key,'result',result=self.result(key)); self.review(key); previous=key
+        with self.assertRaises(ValueError): self.repair('N3','N4')
+        decision=dict(task_id='N3',additional_attempts=1,quote='SIMULATION HUMAN: fix this one more time',
+                      source='SIMULATION direct user message 2',evidence='SIMULATION exact additional count one')
+        self.event('repair_decision',**decision)
+        self.event('repair_decision',**decision)
+        self.assertEqual(journal._repair_limit(self.record(),self.record()['tasks']['N3']),4)
+        self.assertEqual(journal._repair_count(self.record(),self.record()['tasks']['N3']),3)
+        self.repair('N3','N4'); self.intent('N4'); self.observe('N4','result',result=self.result('N4')); self.review('N4')
+        with self.assertRaises(ValueError): self.repair('N4','N5')
+        self.assertEqual(journal._repair_count(self.record(),self.record()['tasks']['N4']),4)
+
+    def test_additional_repair_decision_rejects_missing_human_source_or_unknown_submission(self):
+        self.auto_init(tasks=[task('N'),task('Other')]); self.complete_native(); self.review('N')
+        decision=dict(task_id='N',additional_attempts=1,quote='SIMULATION HUMAN: one more',source='',evidence='SIMULATION')
+        with self.assertRaises(ValueError): self.event('repair_decision',**decision)
+        decision['source']='SIMULATION direct user message 3'
+        decision['additional_attempts']=True
+        with self.assertRaises(ValueError): self.event('repair_decision',**decision)
+        decision['additional_attempts']=1
+        self.intent('Other'); self.observe('Other','unknown')
+        with self.assertRaises(ValueError): self.event('repair_decision',**decision)
+        self.assertEqual(journal._repair_limit(self.record(),self.record()['tasks']['N']),3)
+
+    def method_coverage(self):
+        return dict(visual=[[0,0.1],[8,8.1],[10,10.1],[18,18.1],[20,20.1],[30,30.048]],
+                    audio=[[12,13]], limitations='Frame sequence, not every frame; transcript plus local listening, not full-track listening',
+                    visual_method='shot_sequence', audio_method='transcript_and_spotcheck', blocking_unknowns=[],
+                    shot_coverage=[dict(interval=[0,10],frame_points=[0.05,8.05],evidence='SIMULATION actual shot 1/cut at 10; action windows checked'),
+                                   dict(interval=[10,20],frame_points=[10.05,18.05],evidence='SIMULATION actual shot 2/cut at 20; contact checked'),
+                                   dict(interval=[20,30.048],frame_points=[20.05,30.02],evidence='SIMULATION actual shot 3; end seam checked')],
+                    visual_evidence='SIMULATION full-range scan, real cut inventory, every shot covered; action/seam windows densified at listed times',
+                    transcript_coverage=[[0,30.048]],
+                    audio_evidence='SIMULATION complete generated-track transcript compared to authorized lines; speaker and 12-13s doubt checked by listening')
+
+    def test_explicit_sampling_and_transcript_methods_can_adopt_without_false_full_listening(self):
+        self.auto_init(tasks=[task('N')]); self.complete_native()
+        self.review('N','usable',coverage=self.method_coverage())
+        value=self.record()['tasks']['N']['review']['coverage']
+        self.assertFalse(value['complete']['visual']); self.assertFalse(value['complete']['audio'])
+        self.assertTrue(all(value['assessment_complete'].values()))
+        self.assertEqual(value['audio'],[['12','13']])
+        self.assertTrue(value['limitations'])
+        self.review('N','minor',coverage=self.method_coverage())
+
+    def test_method_blocking_unknowns_cannot_be_adopted(self):
+        self.auto_init(tasks=[task('N')]); self.complete_native()
+        coverage=self.method_coverage(); coverage['blocking_unknowns']=['Speaker identity at 12s is unresolved']
+        with self.assertRaises(ValueError): self.review('N','usable',coverage=coverage)
+        with self.assertRaises(ValueError): self.review('N','minor',coverage=coverage)
+        self.review('N','unknown',coverage=coverage)
+
+    def test_sampling_requires_full_shot_and_transcript_coverage_with_actual_points(self):
+        self.auto_init(tasks=[task('N')]); self.complete_native()
+        for field in ('shot_coverage','transcript_coverage'):
+            coverage=self.method_coverage(); coverage[field]=[]
+            with self.assertRaises(ValueError): self.review('N','usable',coverage=coverage)
+        coverage=self.method_coverage(); coverage['shot_coverage'][0]['frame_points']=[5]
+        with self.assertRaises(ValueError): self.review('N','usable',coverage=coverage)
+        coverage=self.method_coverage(); coverage['visual_evidence']=''
+        with self.assertRaises(ValueError): self.review('N','usable',coverage=coverage)
+        coverage=self.method_coverage(); coverage['audio']=[]
+        with self.assertRaises(ValueError): self.review('N','usable',coverage=coverage)
+
+    def test_empty_blocking_list_cannot_bypass_legacy_limitations_or_continuous_gaps(self):
+        self.auto_init(tasks=[task('N')]); self.complete_native()
+        coverage=dict(visual=[[0,30.048]],audio=[[0,30.048]],limitations='Unspecified inspection limitations',blocking_unknowns=[])
+        with self.assertRaises(ValueError): self.review('N','usable',coverage=coverage)
+        coverage.update(visual_method='continuous',audio_method='listening')
+        self.review('N','usable',coverage=coverage)
+        coverage['visual']=[[0,1],[29,30.048]]
+        with self.assertRaises(ValueError): self.review('N','usable',coverage=coverage)
+        coverage=self.method_coverage(); del coverage['blocking_unknowns']
+        with self.assertRaises(ValueError): self.review('N','usable',coverage=coverage)
+
+    def test_structure_parameter_change_and_duplicate_repair_rejected(self):
+        self.auto_init(tasks=[task('N')]); self.complete_native(); self.review('N')
+        with self.assertRaises(ValueError):
+            self.event('repair', task_id='N', replacement=task('N2', seconds=20), evidence='SIMULATION', dialogue_unchanged=True)
+        with self.assertRaises(ValueError):
+            self.event('repair', task_id='N', replacement=task('N2', resolution='1080P'), evidence='SIMULATION', dialogue_unchanged=True)
+        self.repair('N', 'N2')
+        with self.assertRaises(ValueError): self.repair('N', 'N3')
+
+
 if __name__ == '__main__':
     unittest.main()

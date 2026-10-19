@@ -4,6 +4,8 @@
 
 ## 先辨版本与目录
 
+本工作树为Core1.8.6本地候选，未发布远端。用户明确测试候选时，核本地提交及releases/candidate.json，使用实际1.8.6核心包和相同校验保护步骤；不能猜测候选tag或用正式1.8.5包冒称已部署新审修能力。默认正式部署仍如下。
+
 当前正式推荐为V3.8／Core1.8.5，发行标签`core-v1.8.5`，专用核心包为`Seedance_Codex_Workflow_Core_v1.8.5_2026-10-19_release.zip`。同版本早期候选包保留，仅名称相似不能当作本次正式包；必须核包名、标签、清单和`release_status=release`。
 
 仓库：https://github.com/zengyies-ux/AIGC_Vedio_codex 。从[Core1.8.5正式Release](https://github.com/zengyies-ux/AIGC_Vedio_codex/releases/tag/core-v1.8.5)获取附件。Mac已有五集制作样本，包含用户补充与确认；原生、延长、资产下载归档及绑定按各自真实证据记录，不宣称五集全程无人工。Windows x64 CPU提供部署适配，用户确认Core1.7.2实操可用；1.8.5在线资产等新增能力仍待Windows真机增量验证。发布状态不等于所有平台或所有画面已验收。

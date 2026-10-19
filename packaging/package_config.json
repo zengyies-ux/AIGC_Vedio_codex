@@ -1,9 +1,9 @@
 {
   "package_name": "Seedance_Codex_Workflow_Core",
-  "version": "1.8.5",
+  "version": "1.8.6",
   "release_date": "2026-10-19",
   "update_policy": "manual_only_when_user_requests",
-  "summary": "Core1.8.5正式版：自然动作、持续承接旁白的有效快切、整场站位与剪辑余量；本地资产优先、在线补缺归档、三层素材绑定，同批次回执与恢复。五集实际制作获用户整体认可，局部情绪与接缝仍可改进；Windows旧版实操可用，新在线增量待真机验证。新增独立资产下载启动词；自主审片三次返修与单聊天多集留1.8.6候选。",
-  "release_status": "release",
-  "archive_suffix": "_release"
+  "summary": "Core1.8.6本地候选：主动审片与实际声画覆盖记录，同段最多3次有界修正；保未知不重提、原生一层延长及旧记录累计。明确连续2—3集分集执行、本地资产优先与正常上传能力检查；加强直接情绪回应、紧凑多人构图和有动机的快推变焦，禁止擅加台词。正式推荐仍1.8.5，新链与Windows增量待实测。",
+  "release_status": "local_candidate",
+  "archive_suffix": ""
 }
