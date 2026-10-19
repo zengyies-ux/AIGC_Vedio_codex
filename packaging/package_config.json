@@ -3,7 +3,7 @@
   "version": "1.8.7",
   "release_date": "2026-10-19",
   "update_policy": "manual_only_when_user_requests",
-  "summary": "Core1.8.7本地候选：减少介入，保原配音定位与原台词核对，生成后默认仅视觉复查，声音not_requested且不阻断采用/延长；普通定位疑点AI内部处理。羞涩为轻微局部泛红与自然反应，避免整脸通红及堆小动作。保三次有界修正、未知保护、多集隔离；正式仍1.8.5。",
+  "summary": "Core1.8.7本地候选：减少介入，保原配音定位与原台词核对，生成后默认仅视觉复查，声音not_requested且不阻断采用/延长；普通定位疑点AI内部处理。羞涩为轻微局部泛红与自然反应，避免整脸通红及堆小动作。保三次有界修正、未知保护、多集隔离；正式仍1.8.5。 同版声音设计补丁：每段实际发声者明示稳定性别/年龄感/音区质感/语言口音，OS不代替音色；不新增成片听检。",
   "release_status": "local_candidate",
-  "archive_suffix": ""
+  "archive_suffix": "_voice"
 }

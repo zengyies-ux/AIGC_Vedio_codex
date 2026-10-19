@@ -72,6 +72,8 @@
 
 ## 5. 生成与交付底线
 
+生成前按[声音规则](memories/seedance_workflow/execution_rules.md#sound-and-time)主动建立、复用本剧声线，在每段正文明确所有实际发声角色的音色；OS方式不代替声线性别及基础质感。不要求用户逐角色配置，成片音频免检不省略正文声音设计。
+
 每次Seedance只读本次正文和上传素材，正文自包含、可见可听可执行。未来计划、分析、旁白对齐与制作接力留项目文件。人物轻绑定、场景强锚定、关键道具按需控制，参考区和正文用同一固定简名。
 
 当前用公司平台Seedance 2.5全能参考和延长；不默认Fast、白模、绿幕或试拍。一次延长、本集连续演绎约55秒预留转换／固定区域≤60秒、截图仅内审维护于[接续规则](memories/seedance_workflow/continuity_and_review.md#generation-choice)，是当前制作约束；跨集默认独立不继承前集累计。用户俯视站位图按[空间规则](memories/seedance_workflow/execution_rules.md#space)使用，不自行增制图。

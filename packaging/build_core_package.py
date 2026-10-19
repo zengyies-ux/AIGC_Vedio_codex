@@ -205,7 +205,7 @@ def main() -> None:
     metadata_name = metadata_filename(config.get("release_status", "release"))
     folder_name = f"{config['package_name']}_v{config['version']}"
     suffix = config.get("archive_suffix", "")
-    if suffix not in {"", "_release"}:
+    if suffix not in {"", "_release", "_voice"}:
         raise ValueError("Unsupported archive suffix")
     archive_name = f"{folder_name}_{config['release_date']}{suffix}.zip"
     archive_path = RELEASES_DIR / archive_name
