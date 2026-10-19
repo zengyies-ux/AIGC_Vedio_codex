@@ -4,7 +4,7 @@
 
 **当前正式推荐：Core 1.7.3 · V3.7 团队上手版**
 
-本工作树正在开发 **V3.8／Core1.8.1候选**：在1.8.0实测反馈上修正连续旁白含义与画面、自然行动和人物态度、D执行及本地资产优先，并启用随音轨增加的最低素材量。≤2.5秒与站位连续保留，新增效果待实片验证。候选不自动升级组员环境；本地入口见[候选说明](validation/director_v38.md)，正式部署仍沿下方1.7.3链接。
+本工作树正在开发 **V3.8／Core1.8.3候选**：在1.8.1基础上精简简单动作描述、移除启动词工作目录字段、落实材料内资产归档与新版重测；通常一聊天一集，不同集可另开聊天并行。≤2.5秒与站位连续保留，新增效果待实片验证。候选不自动升级组员环境；本地入口见[候选说明](validation/director_v38.md)，正式部署仍沿下方1.7.3链接。
 
 [使用SOP](https://github.com/zengyies-ux/AIGC_Vedio_codex/blob/core-v1.7.3/QUICK_START.md) · [完整制作启动词](https://github.com/zengyies-ux/AIGC_Vedio_codex/blob/core-v1.7.3/NEW_PROJECT_CONVERSATION_PROMPT.md) · [下载与版本说明](https://github.com/zengyies-ux/AIGC_Vedio_codex/releases/tag/core-v1.7.3)
 

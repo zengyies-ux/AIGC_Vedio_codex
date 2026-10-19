@@ -4,7 +4,7 @@
 
 ## 先辨版本与目录
 
-本工作树为V3.8／Core1.8.1候选，继承1.7.3音频与网页执行基线；正式推荐仍按下文Core1.7.3。只有用户明确选择测试候选时，才按实际候选提交、本机包和`releases/candidate.json`核对部署，`release_status`必须标候选，不能把候选包或分支名称当成已发布Release。候选部署可用下文相同校验／升级保护步骤，但来源版本必须对应；先核远端是否已有该提交，不猜候选tag或下载URL。
+本工作树为V3.8／Core1.8.3候选，继承1.7.3音频与网页执行基线；正式推荐仍按下文Core1.7.3。只有用户明确选择测试候选时，才按实际候选提交、本机包和`releases/candidate.json`核对部署，`release_status`必须标候选，不能把候选包或分支名称当成已发布Release。候选部署可用下文相同校验／升级保护步骤，但来源版本必须对应；先核远端是否已有该提交，不猜候选tag或下载URL。
 
 仓库：https://github.com/zengyies-ux/AIGC_Vedio_codex 。当前明确推荐的发行包是[Core1.7.3](https://github.com/zengyies-ux/AIGC_Vedio_codex/releases/tag/core-v1.7.3)，标签`core-v1.7.3`。该1.7.3版本已正式发布；当前Mac环境有真实整集自动链与用户认可，Windows x64 CPU提供部署和适配；用户本轮确认Core1.7.2实操无问题，属用户反馈。Core1.7.3入库修订与V3.8在线及镜头规则仍需分别验证，硬件、耗时与异常恢复能力未由此全面核验。发布状态不等于所有平台均已验收。
 

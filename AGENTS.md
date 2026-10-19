@@ -10,7 +10,7 @@
 
 默认验证模式：新解读、分段/候选位置一次整体审核后出正式稿，已有采用阶段直接继承，不追加审批。用户明确授权当集自主制作时，在该范围内部核查后直接出稿并落盘授权，不因升级失效，也不据此启用全局常规模式；自主前置与网页准备／生成授权分别记录，见[交付与续做](memories/seedance_workflow/continuity_and_review.md#execution-handoff)。用户认可流程/效果并落盘启用常规模式后，内部核查采用出稿；沉默、文档验收或发布不切模式。资产缺失、输入冲突或无法内解问题才问，少确认不省设计。
 
-当前工作树为V3.8／Core1.8.1候选，基于Core1.7.3；正式推荐仍为Core1.7.3。候选变更与待验见[V3.8核验](validation/director_v38.md)，各平台范围见[部署说明](DEPLOYMENT.md)。以连续旁白含义、台词与人物目的设计场面，再选择看清行动／回应的镜头，不先排无关画面再找词对应。有明确冲突时，按人物对待对方的态度与目的，组织身体、物件、空间或社交交锋；身体交锋拍足力度和承受，不能统一退成轻触，也不为动作数量造抓甩；细则唯一见[冲突场面](memories/seedance_workflow/director_os.md#conflict-staging)。声音连续，按行动与回应切镜；长台词跨镜，见[声音跨镜](memories/seedance_workflow/execution_rules.md#audio-shot-independence)。
+当前工作树为V3.8／Core1.8.3候选，基于Core1.7.3；正式推荐仍为Core1.7.3。候选变更与待验见[V3.8核验](validation/director_v38.md)，各平台范围见[部署说明](DEPLOYMENT.md)。用户只填材料目录；工作流位置由当前项目识别，不把二者混同。以连续旁白含义、台词与人物目的设计场面，再选择看清行动／回应的镜头，不先排无关画面再找词对应。有明确冲突时，按人物对待对方的态度与目的，组织身体、物件、空间或社交交锋；正文默认自然动作短句，保对象、力度与结果；普通肢体动作不写关节／重心／支撑分解，仅关键交接或具体穿帮补必要细节；细则唯一见[冲突场面](memories/seedance_workflow/director_os.md#conflict-staging)。声音连续，按行动与回应切镜；长台词跨镜，见[声音跨镜](memories/seedance_workflow/execution_rules.md#audio-shot-independence)。
 
 从原材料开始的同类完整单集默认A剧本／冲突、B声音／时间、C资产／空间、D视觉导演／目标观众四项职责协作，模型均为GPT-6.1-sol；A／B／C既有high、D low，当次明确设置优先。D优先在前序交回后独立承担视觉职责，分段前提案、初稿后复审各一次；实际执行者／转任和采用变化沿现有记录说明，主控对删改后的持续语义、动作和空间负责；沿用采用设计、自带正式稿、小修或用户指定单智能体不强制补齐协作角色，容量不可用不无限重试，见[协作职责](memories/seedance_workflow/director_os.md#collaboration)。
 
