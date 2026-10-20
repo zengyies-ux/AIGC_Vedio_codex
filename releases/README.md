@@ -2,7 +2,7 @@
 
 这里保存用户明确要求发布的干净核心学习包。
 
-**当前正式发布：[Core1.8.5](https://github.com/zengyies-ux/AIGC_Vedio_codex/releases/tag/core-v1.8.5)**。标签`core-v1.8.5`，正式包`Seedance_Codex_Workflow_Core_v1.8.5_2026-10-19_release.zip`；保留同号旧候选及历史附件，按完整文件名与`release_status`区分。Mac已有五集制作样本及42图下载归档证据，样本含用户补充与确认；Windows Core1.7.2已有用户实操确认，本版在线等新增能力仍待Windows增量验证。自动审片、三次返修及同聊天2—3集属于下一候选，未包含在1.8.5。
+**当前正式发布：[Core1.8.8](https://github.com/zengyies-ux/AIGC_Vedio_codex/releases/tag/core-v1.8.8)**。Mac同聊天三集和单集正常制作、视觉复查及临时视频清理已完成；声音免检，Windows增量待验。正式包带_release，不覆盖同号候选和历史版本。
 
 以下各版本说明均为历史时点；其中“当前”“latest”及待验状态仅描述当时，不替代本页顶部正式版本与[V3.8核验](../validation/director_v38.md)。
 

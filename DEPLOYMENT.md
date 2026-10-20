@@ -4,13 +4,11 @@
 
 ## 先辨版本与目录
 
-本工作树为Core1.8.8本地候选，未发布远端。用户明确测试候选时，核本地提交及releases/candidate.json，使用实际1.8.8核心包和相同校验保护步骤；不能猜测候选tag或用正式1.8.5包冒称已部署新审修能力。默认正式部署仍如下。
+当前正式推荐V3.8／Core1.8.8，发行标签core-v1.8.8，专用核心包Seedance_Codex_Workflow_Core_v1.8.8_2026-10-20_release.zip。旧候选保留，核清包名、清单与release_status=release。
 
-当前正式推荐为V3.8／Core1.8.5，发行标签`core-v1.8.5`，专用核心包为`Seedance_Codex_Workflow_Core_v1.8.5_2026-10-19_release.zip`。同版本早期候选包保留，仅名称相似不能当作本次正式包；必须核包名、标签、清单和`release_status=release`。
+仓库：https://github.com/zengyies-ux/AIGC_Vedio_codex 。从[Core1.8.8正式Release](https://github.com/zengyies-ux/AIGC_Vedio_codex/releases/tag/core-v1.8.8)获取附件。Mac已验证同聊天连续三集及另一单集，共11条原生+2次延长，视觉复查与临时副本清理完成；含用户补充声线，声音未审，不宣称无人介入或全片无误。Windows x64 CPU提供部署适配，用户确认Core1.7.2实操可用；1.8.8在线资产和审片清理等增量仍待Windows真机增量验证。发布状态不等于所有平台或所有画面已验收。
 
-仓库：https://github.com/zengyies-ux/AIGC_Vedio_codex 。从[Core1.8.5正式Release](https://github.com/zengyies-ux/AIGC_Vedio_codex/releases/tag/core-v1.8.5)获取附件。Mac已有五集制作样本，包含用户补充与确认；原生、延长、资产下载归档及绑定按各自真实证据记录，不宣称五集全程无人工。Windows x64 CPU提供部署适配，用户确认Core1.7.2实操可用；1.8.5在线资产等新增能力仍待Windows真机增量验证。发布状态不等于所有平台或所有画面已验收。
-
-- 从固定标签`core-v1.8.5`读取`packaging/package_config.json`、`releases/latest.json`及本说明，下载上述正式ZIP与同名SHA文件，核内容版本、清单、实际tag提交和哈希。不把旧候选或未核的latest当正式版。
+- 从固定标签`core-v1.8.8`读取`packaging/package_config.json`、`releases/latest.json`及本说明，下载上述正式ZIP与同名SHA文件，核内容版本、清单、实际tag提交和哈希。不把旧候选或未核的latest当正式版。
 - `main`首页只作正式发布导航；源码开发目录与干净Core制作目录分开，不clone历史main后直接运行旧规则，不使用GitHub自动生成的Source code ZIP替代专用核心包。候选版须用户明确选择并核其实际状态。
 - 用户没给安装目录时，在本机文档目录选清楚命名的新目录；已有项目不得覆盖。Windows路径使用本机实际盘符与反斜杠，含空格路径正确引用，不要求用户改成Unix路径或手工设置PATH。
 
@@ -39,7 +37,7 @@ Codex先定位Python3.12；Windows优先用`py -3.12`，Mac优先已有项目环
 
 自检包含依赖版本、运行时导入、内置decoder和临时WAV；`--prepare-model`核固定模型。用户已有本集音轨时，再由Codex加`--audio <真实MP3/WAV绝对路径>`核真实转写、缓存、耗时及词表；不要为部署强行处理历史项目，不把导入／模拟当真实音频通过。正文、JSON及日志使用UTF-8，实际中文用户名／空格路径和Windows占用恢复仍须真机验证。CPU性能按真机记录，不承诺硬件无关速度。
 
-Windows可以原生PowerShell使用Codex，也可选WSL2，见[官方Windows说明](https://learn.chatgpt.com/docs/windows/windows-app)；本版Windows预览优先原生x64 CPU。用户已有Windows1.7.2实际制作成功反馈；新电脑的安装、模型下载恢复、CPU资源与文件占用等具体条件仍按本机验证，不能用旧版、Mac或模拟结果冒充1.8.5新增在线入口及画面质量通过。
+Windows可以原生PowerShell使用Codex，也可选WSL2，见[官方Windows说明](https://learn.chatgpt.com/docs/windows/windows-app)；本版Windows预览优先原生x64 CPU。用户已有Windows1.7.2实际制作成功反馈；新电脑的安装、模型下载恢复、CPU资源与文件占用等具体条件仍按本机验证，不能用旧版、Mac或模拟结果冒充本版在线入口、清理及画面质量通过。
 
 新安装保持Codex应用／用户配置默认位置，已有自定义配置先识别，不自动重置；本工作流和材料仍可使用用户指定的D盘目录。网页默认使用Codex内置浏览器，在线取图与制作保持同一浏览器会话；Windows当前版本支持时可用Ctrl+T打开标签页（以当前界面为准），提前在同一会话登录制作网站，使用飞书在线材料时才登录飞书。用户明确指定其他浏览器时才改变；内置浏览器工具不可用先报告，不因外部浏览器已登录自动换用。当前聊天连接失败先按[会话异常处理](WINDOWS_BROWSER_TROUBLESHOOTING.md#session-recovery)区分缺标签、工具错误与明确拒绝；同项目新聊天读取诊断有成功案例，但不保证修复。只有浏览器入口缺失且日志指向内置插件清单时，才用Windows条件式修复，不默认执行复制。
 
