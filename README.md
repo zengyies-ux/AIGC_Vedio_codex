@@ -1,55 +1,108 @@
 # Seedance Codex Workflow
 
-面向短剧制作团队的 Codex 工作流：读取剧本、音频和真实资产，完成导演设计与提示词，并按授权执行网页生成、等待结果和视频延长。
+**把剧本、配音和真实素材交给 Codex，完成导演设计、视频提示词与授权范围内的网页制作。**
 
-**当前正式推荐：Core 1.8.8 · V3.8**
+你只需准备材料、填写启动词。环境配置、音频定位、素材核对和内部记录由 Codex 完成。
 
-本地工作树为Core1.9.0／V3.9候选，改进人物性格、关系互动、长对白场面和镜头取景；尚未发布或验证新画面。下方固定链接仍为正式1.8.8。
+```mermaid
+flowchart LR
+    A[你准备材料] --> B[Codex解读并设计]
+    B --> C[填写网页并按授权生成]
+    C --> D[你查看成片与反馈]
+```
 
-Core1.8.8已获用户验证认可：一聊天连续三集与另一单集正常制作完成。运行与画面审查已可用，人物表现、部分构图和具体成片仍需要用户判断。
+| 现在要做什么 | 从这里开始 |
+|---|---|
+| 第一次使用 | 按下方 **① 安装 → ② 放材料 → ③ 开始制作** 操作 |
+| 已安装，开始一集或连续2—3集 | [正式版完整制作启动词](https://github.com/zengyies-ux/AIGC_Vedio_codex/blob/core-v1.8.8/NEW_PROJECT_CONVERSATION_PROMPT.md) |
+| 只收集图片，暂不制作视频 | [正式版独立资产收集词](https://github.com/zengyies-ux/AIGC_Vedio_codex/blob/core-v1.8.8/ASSET_DOWNLOAD_PROMPT.txt)；无需音频 |
+| 中断了，想继续 | 告诉 Codex：“先核已有任务和结果，沿原记录继续，不重复提交。” |
 
-[使用SOP](https://github.com/zengyies-ux/AIGC_Vedio_codex/blob/core-v1.8.8/QUICK_START.md) · [完整制作启动词](https://github.com/zengyies-ux/AIGC_Vedio_codex/blob/core-v1.8.8/NEW_PROJECT_CONVERSATION_PROMPT.md) · [独立资产收集词](https://github.com/zengyies-ux/AIGC_Vedio_codex/blob/core-v1.8.8/ASSET_DOWNLOAD_PROMPT.txt) · [下载正式版](https://github.com/zengyies-ux/AIGC_Vedio_codex/releases/tag/core-v1.8.8)
+> **版本先看这里**
+>
+> **正式推荐：Core 1.8.8 · V3.8**，下方公开部署和导航固定使用这一版本。
+>
+> **本地候选：Core 1.9.1 · V3.9，未发布**。本页候选入口仅供当前本地工作树使用，不直接替换公共main首页。本地试用者使用[候选上手指南](QUICK_START.md)、[候选制作启动词](NEW_PROJECT_CONVERSATION_PROMPT.md)、[候选资产收集词](ASSET_DOWNLOAD_PROMPT.txt)。候选新增规则与文案不代表已经完成成片验证。
 
-## 开始使用
+## ① 安装：把这段话发给 Codex
 
-把下面这段话交给 Codex：
+只在首次使用或需要升级时操作。复制整段，无需自己下载依赖：
 
 ```text
 请从 https://github.com/zengyies-ux/AIGC_Vedio_codex 部署推荐版本 Core 1.8.8。
 先读取 core-v1.8.8 标签下的 DEPLOYMENT.md，获取并校验正式核心包，准备本机环境并自检。
-保留我已有的项目、素材、偏好和缓存；完成后报告核心、音频和浏览器状态，并给出制作入口。
+保留我已有的项目、素材、偏好和缓存；完成后报告核心、音频和浏览器状态，并告诉我应在Codex中打开哪个含AGENTS.md的制作目录。
 ```
 
-准备完整剧本、目标集已剪好气口的完整 MP3、已有资产或只读在线资产链接，以及可选想法。把材料目录原样交给 Codex，例如 `D:\短剧项目\剧名`；无需填写时间码、下载目录或内部记录。
+按提示完成账号登录或系统弹窗。等 Codex 报告自检结果后继续；出现问题，直接把报错交给它处理。
 
-## 制作范围
+## ② 放材料：建一个剧目文件夹
 
-- 从原材料开始，或沿用已采用的解读、分段、正式稿，只补剩余工作。
-- 先读本集剧本、核本地资产；不足时从已提供来源主动下载原图，归入材料目录。角色优先适配三视／阶段造型，不收独立面部高清图。
-- 结合连续声音含义设计行动和回应，核人物状态、空间关系及可剪余量；简单动作使用自然短句。
-- 将真实图片补入项目素材库，加入卡片参考并建立正文引用；明确授权后执行本集原生生成、活动任务内等待及必要的一次延长。
+例如 Windows 的 `D:\短剧项目\剧名`，或 Mac 的 `~/Documents/短剧项目/剧名`。Mac实际路径可从Finder复制。放好以下材料：
 
-支持一聊天一集，或明确指定连续2—3集并提供各集网页。默认只准备；生成和付费需明确授权，关键问题最多三次修正须在任务授权内，不自动充值或无限返抽。本流程不生成资产图，线上仍缺的必要素材集中说明。自动等待需要当前任务持续运行，关闭应用后的持久后台执行尚未提供。
-
-## 验证范围
-
-| 环境 | 已有证据与边界 |
+| 材料 | 你需要准备什么 |
 |---|---|
-| Apple Silicon Mac | 本版一聊天三集及另一单集共11条原生、2次延长完成，视觉复查与13份临时视频清理已有证据。三集任务含一次声线补充；生成声音按用户要求未审，不宣称画面全部无误。 |
-| Windows x64 | 提供CPU音频后端、依赖准备与自检；用户已确认 Core 1.7.2 实操可用。保留该基线，1.8.8在线资产、审片清理等增量仍需真机验证。 |
-| 其他架构／语言 | 未声明完整支持，由 Codex 报告本机实际能力。 |
+| 剧本 | 完整剧本；启动时说明要做哪一集 |
+| 配音 | 每集一个完整 MP3，已剪掉多余气口和长空白，保留全部旁白、对白、顺序及必要停顿；已有有效 WAV 也可 |
+| 图片 | 已有角色、场景和必要道具图；没有本地图时提供只读在线资产文档链接 |
+| 想法（可选） | 直接写想强调的剧情、情绪或画面；不写即交给 AI 导演 |
 
-资产收集样本已核42张唯一原图（角色23、场景16、道具3）；文件与来源指纹一致。已有原生生成、等待及一次延长成功记录；具体版本、人工介入、效果反馈和待验项见[验证说明](https://github.com/zengyies-ux/AIGC_Vedio_codex/blob/core-v1.8.8/validation/director_v38.md)。首次部署仍须本机自检。
+**不用做时间码、单集 Word、逐镜表或下载目录配置。** Codex 先核本地，缺少或不确定才查所给在线来源；新下载图片归入这份材料目录。
 
-## 项目入口
+## ③ 开始制作：复制启动词，填写顶部
 
-| 使用者 | 入口 |
+先在制作网站打开目标剧目中的本集生成页面，复制地址栏完整URL；每集使用自己的页面链接，网页字段不要填网站首页。
+
+打开[正式版完整制作启动词](https://github.com/zengyies-ux/AIGC_Vedio_codex/blob/core-v1.8.8/NEW_PROJECT_CONVERSATION_PROMPT.md)，复制其中完整代码块到工作流项目的新聊天。只改顶部的剧名／集数、材料目录、可选资产链接、制作网页、想法和执行范围。
+
+- **先准备，自己点生成**：选择“只准备，由我点击生成”。
+- **让 Codex 完成生成**：使用启动词提供的生成授权选项，明确允许付费提交、等待、视觉复查和有界修正。
+- **连续2—3集**：明确写集数范围，并逐集给出网页，例如“EP19：URL；EP20：URL”。
+
+保持电脑与当前任务运行。缺少登录、权限或必要图片时，按 Codex 汇总的具体问题补充即可。完成后说“这版采用”，或指出要修改的片段。
+
+需要更详细的一步一步说明，查看[正式版使用指南](https://github.com/zengyies-ux/AIGC_Vedio_codex/blob/core-v1.8.8/QUICK_START.md)。
+
+<details>
+<summary><strong>只想收集资产？</strong></summary>
+
+打开[正式版独立资产收集词](https://github.com/zengyies-ux/AIGC_Vedio_codex/blob/core-v1.8.8/ASSET_DOWNLOAD_PROMPT.txt)，整份复制到新聊天，只填写剧名、负责集数、材料目录和在线资产文档。Codex 会读负责范围剧本，核本地，补下载适配原图，整理来源与真实缺项。
+
+不需要音频，不进入视频制作。角色优先三视／阶段造型，不收独立面部高清图；不生成或重绘图片。资产是否齐全按剧本需要与实际核图判断，不能只看下载数量。
+
+本地1.9.1候选另提供[两名子代理协作收集词](ASSET_DOWNLOAD_PROMPT.txt)：分别核剧本需求和资产缺项，主控独占浏览器与下载归档。
+
+</details>
+
+<details>
+<summary><strong>已验证到哪里，有哪些边界？</strong></summary>
+
+| 环境 | 现有证据与边界 |
 |---|---|
-| 制作组员 | [简明SOP](https://github.com/zengyies-ux/AIGC_Vedio_codex/blob/core-v1.8.8/QUICK_START.md)、[完整启动词](https://github.com/zengyies-ux/AIGC_Vedio_codex/blob/core-v1.8.8/NEW_PROJECT_CONVERSATION_PROMPT.md)、[独立资产收集词](https://github.com/zengyies-ux/AIGC_Vedio_codex/blob/core-v1.8.8/ASSET_DOWNLOAD_PROMPT.txt) |
-| 执行部署的Codex | [部署、升级与自检](https://github.com/zengyies-ux/AIGC_Vedio_codex/blob/core-v1.8.8/DEPLOYMENT.md) |
-| 执行制作的Codex | [唯一规则入口](https://github.com/zengyies-ux/AIGC_Vedio_codex/blob/core-v1.8.8/AGENTS.md)、[网页操作技能](https://github.com/zengyies-ux/AIGC_Vedio_codex/blob/core-v1.8.8/extensions/seedance-jumeng-operator/SKILL.md) |
-| 维护者 | [版本变化](https://github.com/zengyies-ux/AIGC_Vedio_codex/blob/core-v1.8.8/CHANGELOG.md)、[路线图](https://github.com/zengyies-ux/AIGC_Vedio_codex/blob/core-v1.8.8/ROADMAP.md)、[核心包维护](https://github.com/zengyies-ux/AIGC_Vedio_codex/blob/core-v1.8.8/packaging/README.md) |
+| Apple Silicon Mac | Core1.8.8一聊天三集及另一单集正常完成，共11条原生、2次延长；视觉复查与13份临时视频清理有记录。生成声音按用户要求未审，不宣称画面全部无误。 |
+| Windows x64 | Core1.7.2实操已获用户确认；提供CPU音频后端、依赖准备与自检。1.8.8在线资产、审片清理等增量仍待真机验证。 |
+| 其他架构／语言 | 未声明完整支持，以本机自检为准。 |
 
-使用 Release 专用核心包 `Seedance_Codex_Workflow_Core_v1.8.8_2026-10-20_release.zip` 及同名校验文件；GitHub自动生成的Source code ZIP不作为团队制作包。核心包不含真实项目、素材、媒体或账号，升级保留个人资料。
+资产样本已核42张唯一原图（角色23、场景16、道具3），文件与来源指纹一致。样本不是新剧资产齐全的保证。详细记录见[正式版验证说明](https://github.com/zengyies-ux/AIGC_Vedio_codex/blob/core-v1.8.8/validation/director_v38.md)。
 
-默认分支首页固定导航到正式标签；开发与旧版见[分支](https://github.com/zengyies-ux/AIGC_Vedio_codex/branches)和[历史Release](https://github.com/zengyies-ux/AIGC_Vedio_codex/releases)。下一版1.9.0将针对人物性格、关系互动与镜头设计做本地试验，不混入本版运行验证。
+默认只准备；生成和付费需明确授权。关键问题最多三次修正须在任务授权内，不自动充值或无限返抽。当前支持活动任务内等待，关闭应用后不会自动持续执行。本流程不生成资产图。
+
+</details>
+
+<details>
+<summary><strong>下载、升级与维护入口</strong></summary>
+
+| 用途 | 正式1.8.8入口 |
+|---|---|
+| 下载 | [正式Release](https://github.com/zengyies-ux/AIGC_Vedio_codex/releases/tag/core-v1.8.8) |
+| 部署／升级／自检 | [DEPLOYMENT.md](https://github.com/zengyies-ux/AIGC_Vedio_codex/blob/core-v1.8.8/DEPLOYMENT.md) |
+| 制作规则 | [AGENTS.md](https://github.com/zengyies-ux/AIGC_Vedio_codex/blob/core-v1.8.8/AGENTS.md) |
+| 网页操作 | [执行技能](https://github.com/zengyies-ux/AIGC_Vedio_codex/blob/core-v1.8.8/extensions/seedance-jumeng-operator/SKILL.md) |
+| 变化与计划 | [CHANGELOG](https://github.com/zengyies-ux/AIGC_Vedio_codex/blob/core-v1.8.8/CHANGELOG.md) · [ROADMAP](https://github.com/zengyies-ux/AIGC_Vedio_codex/blob/core-v1.8.8/ROADMAP.md) |
+| 核心包维护 | [packaging/README](https://github.com/zengyies-ux/AIGC_Vedio_codex/blob/core-v1.8.8/packaging/README.md) |
+
+使用Release专用核心包 `Seedance_Codex_Workflow_Core_v1.8.8_2026-10-20_release.zip` 及同名校验文件；GitHub自动生成的Source code ZIP不作为团队制作包。核心包不含真实项目、素材、媒体或账号，升级保留个人资料。
+
+本地候选维护者查看[本地部署说明](DEPLOYMENT.md)和[本地版本变化](CHANGELOG.md)。本轮1.9.1仅本地候选，不能使用尚未发布的标签或下载链接。旧版见[历史Release](https://github.com/zengyies-ux/AIGC_Vedio_codex/releases)。
+
+</details>

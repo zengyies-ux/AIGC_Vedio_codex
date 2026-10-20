@@ -866,6 +866,39 @@ class ReviewRepairTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             self.init(authorization={**AUTH,'review_audio':'false'})
 
+    def test_quick_overview_can_continue_without_exhaustive_shot_inventory(self):
+        self.init(authorization={**AUTH,'review_required':True,'auto_repair':True})
+        self.complete_native()
+        coverage=dict(visual=[[0,2],[12,15],[28,30.048]],visual_method='overview',
+                      visual_evidence='SIMULATION normal-speed visual overview and transition/body spot checks; no obvious unusable fault',
+                      blocking_unknowns=[],limitations='Not a frame-by-frame or full shot audit; audio not requested')
+        self.review('N','minor',coverage=coverage)
+        saved=self.record()['tasks']['N']['review']['coverage']
+        self.assertFalse(saved['complete']['visual'])
+        self.assertEqual(saved['assessment_scope'],'obvious_visual_errors')
+        self.assertTrue(saved['assessment_complete']['visual'])
+        self.assertEqual(saved['audio_status'],'not_requested')
+        self.check_source(); self.intent('E')
+
+    def test_overview_still_needs_actual_visual_evidence_and_no_critical_unknown(self):
+        self.init(authorization={**AUTH,'review_required':True,'auto_repair':True},tasks=[task('N')])
+        self.complete_native()
+        coverage=dict(visual=[[0,2]],visual_method='overview',visual_evidence='SIMULATION observed frame and action',
+                      blocking_unknowns=[],limitations='Quick review only')
+        for field,value in [('visual',[]),('visual_evidence',''),('blocking_unknowns',['Standing location cannot be determined'])]:
+            variant={**coverage,field:value}
+            with self.assertRaises(ValueError): self.review('N','usable',coverage=variant)
+        self.review('N','unknown',coverage={**coverage,'blocking_unknowns':['Standing location cannot be determined']})
+        with self.assertRaises(ValueError): self.repair('N','R1')
+
+    def test_overview_does_not_bypass_failed_source_seam(self):
+        self.init(authorization={**AUTH,'review_required':True,'auto_repair':True})
+        self.complete_native()
+        self.review('N','usable',coverage=dict(visual=[[0,3]],visual_method='overview',
+                    visual_evidence='SIMULATION reviewed obvious visual state',blocking_unknowns=[],limitations='Quick review'))
+        self.check_source(qualified=False)
+        with self.assertRaises(ValueError): self.intent('E')
+
     def test_structure_parameter_change_and_duplicate_repair_rejected(self):
         self.auto_init(tasks=[task('N')]); self.complete_native(); self.review('N')
         with self.assertRaises(ValueError):

@@ -1,4 +1,4 @@
-# 轻量网页回执与审修日志（Core 1.8.7 本地候选）
+# 轻量网页回执与审修日志（Core 1.9.1 本地候选）
 
 `journal.py`是宿主LLM的提交前后记录工具，使用Python标准库。它不连接浏览器、不点击、不等待、不下载、不调用私有API，也不支付。完整操作规程见[授权生成—等待—核源—续做](../../extensions/seedance-jumeng-operator/references/generation-execution.md)。
 
@@ -64,17 +64,20 @@ JSON事件和目录由AI内部整理，用户不需要填写表格、卡号或JS
 
 ## 主动审片与有界修正
 
-完整生成授权包含主动审修时，宿主实际复查画面并调用review。Core1.8.7默认review_audio=false（省略也为false），只以视觉覆盖与视觉关键未决判断采用／核源；不提取或转写成片声音，不要求用户试听。coverage.audio可省略或为空，audio_status=not_requested，complete.audio仍如实记false而非伪造通过。原始输入配音的定位和提示词原句核对保留。
+完整生成授权包含主动审修时，宿主实际复查画面并调用review。从Core1.8.7起默认review_audio=false，本版保持（省略也为false），只以视觉覆盖与视觉关键未决判断采用／核源；不提取或转写成片声音，不要求用户试听。coverage.audio可省略或为空，audio_status=not_requested，complete.audio仍如实记false而非伪造通过。原始输入配音的定位和提示词原句核对保留。
 
 只有用户明确专项检查生成声音才录review_audio=true，并使用下述可选音频方法及门禁。旧记录不清零：按当前用户决定更新音频政策、复用视觉证据追加review，可解除仅因声音的旧unknown，不伪造user_accept。真实提交unknown、视觉问题、修正次数和原授权保持。
 
-支持明确声明`visual_method=continuous|shot_sequence`、`audio_method=listening|transcript_and_spotcheck`和`blocking_unknowns=[]`。`limitations`保留“未逐帧”“没有全轨连续听检”等方法限制；真正影响事件、台词、说者、动作、身份或接缝的未决判断写入blocking_unknowns，不能挪到limitations后宣称可用。明确方法下，当前要求通道的方法覆盖且无关键未决即可usable/minor，不因合法方法限制逼用户逐条代审。
+支持明确声明`visual_method=overview|continuous|shot_sequence`、`audio_method=listening|transcript_and_spotcheck`和`blocking_unknowns=[]`。`limitations`保留“未逐帧”“没有全轨连续听检”等方法限制；真正影响事件、台词、说者、动作、身份或接缝的未决判断写入blocking_unknowns，不能挪到limitations后宣称可用。明确方法下，当前要求通道的方法覆盖且无关键未决即可usable/minor，不因合法方法限制逼用户逐条代审。
+
+- overview为1.9.1默认：记录实际观察窗口和非空visual_evidence（看了什么、有无明显站位／肢体逻辑错误），无关键blocking_unknowns即可采用或记轻微可剪；不需镜头清单、全区间或密集帧。assessment_scope=obvious_visual_errors，assessment_complete只表示该快速检查完成；complete.visual仍按实际窗口记录，不能伪称全片逐镜覆盖。源接缝未合格仍不能延长，review=unknown不授权返抽。
+以下详细方法仅在专项审查确需时采用，不是默认步骤。
 
 - continuous要求visual窗口完整覆盖；listening仅在review_audio=true时要求audio覆盖。未请求声音时不用audio_method或transcript_coverage；blocking_unknowns只列本轮实际检查范围内的关键未决项，不放声音未核。
 - shot_sequence另记`shot_coverage=[{interval:[实际镜头起止],frame_points:[实际核看时点],evidence:"本镜证据"},...]`及`visual_evidence`。镜头区间须覆盖完整结果，每个实际镜头有帧点且落在该镜和真实visual窗口；visual_evidence说明全段扫描、实际切点、逐镜覆盖及关键动作／接缝加密，可引用存有具体时点的证据文件。首中尾少帧不代表全片，不能伪造镜头表来凑完整覆盖。
 - transcript_and_spotcheck另记`transcript_coverage`完整生成音轨转写与授权台词对照范围，以及`audio_evidence`说明该对照和实际疑点核对；audio仅为实际局部听检窗口且不能为空，不声称全片已听。转写不能确认的说者、台词、音效／动作时序等关键疑点须补核或列blocking_unknowns。
 
-日志的`complete`仅表示实际visual/audio窗口是否覆盖全域；`assessment_complete`表示所声明方法的覆盖。工具只验证结构、区间、帧点及非空证据声明，不能认证真实镜头数、图像／转写质量或代替宿主审片。未覆盖／关键疑点保持unknown并补核；已确证关键错误可记critical后精准修正，不冒称旧片全审，新结果仍按完整方法覆盖审核。
+日志的`complete`仅表示实际visual/audio窗口是否覆盖全域；`assessment_complete`表示所声明方法的覆盖。工具只验证结构、区间、帧点及非空证据声明，不能认证真实镜头数、图像／转写质量或代替宿主审片。未覆盖／关键疑点保持unknown并补核；已确证关键错误可记critical后精准修正，不冒称旧片全审，新结果按当前实际要求的检查级别复查。
 
 `usable`为可用；`minor`为轻微、后期可剪且不伤事件／对白／关键接缝，记录可裁依据，不追求无瑕疵重抽；`critical`记录具体错误、因果和修正方案；`unknown`只补证据，不能重生成。任何未经原剧本／用户授权的新台词都不允许；台词以原剧本／用户明确授权原句为基准，不以错误提示词为准。删除擅自新增的“Help him!”属于恢复获授权台词，不算改原台词；`dialogue_unchanged=true`是宿主已核事实，不是工具自动识别语言。
 

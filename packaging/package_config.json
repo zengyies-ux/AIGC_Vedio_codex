@@ -1,9 +1,9 @@
 {
   "package_name": "Seedance_Codex_Workflow_Core",
-  "version": "1.9.0",
+  "version": "1.9.1",
   "release_date": "2026-10-20",
   "update_policy": "manual_only_when_user_requests",
-  "summary": "Core1.9.0／V3.9本地候选：人物性格落实为主动选择与回应，明确关系阶段内可设计亲密表达，长对白用连续场面而非机械反打，近景取景实际可读且不例行拉远收尾。多集逐集完成导演，现有音频/预算/网页/日志算法保持。正式仍1.8.8，新表现力待正常制作验证。",
+  "summary": "Core1.9.1／V3.9本地候选：多人情绪/存在感、完整剧本与原台词双向核查、原代理职责细化、快速视觉检查overview、新人复制式上手和双代理资产收集。保预算/声线/音频免检/网页恢复；无人回复不自动出图，正式仍1.8.8，新效果待验证。",
   "release_status": "local_candidate",
   "archive_suffix": ""
 }

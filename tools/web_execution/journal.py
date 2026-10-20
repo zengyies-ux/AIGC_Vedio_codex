@@ -415,12 +415,16 @@ def _review_coverage(value, duration, audio_required=False):
     normalized['methods_declared'] = methods
     assessed = deepcopy(complete)
     if methods:
-        if value.get('visual_method') not in ('continuous', 'shot_sequence') or (audio_required and value.get('audio_method') not in ('listening', 'transcript_and_spotcheck')):
+        if value.get('visual_method') not in ('overview', 'continuous', 'shot_sequence') or (audio_required and value.get('audio_method') not in ('listening', 'transcript_and_spotcheck')):
             raise ValueError('Declare supported actual visual and audio assessment methods')
         if 'blocking_unknowns' not in value:
             raise ValueError('Method-based assessment must explicitly record blocking unknowns')
         normalized.update(visual_method=value['visual_method'],
                           audio_method=value.get('audio_method', 'not_requested'))
+        if value['visual_method'] == 'overview':
+            normalized['assessment_scope'] = 'obvious_visual_errors'
+            normalized['visual_evidence'] = value.get('visual_evidence', '')
+            assessed['visual'] = bool(normalized['visual'] and _text(normalized['visual_evidence']))
         if value['visual_method'] == 'shot_sequence':
             shots = value.get('shot_coverage', [])
             if not isinstance(shots, list):
