@@ -4,7 +4,7 @@
 
 **当前正式推荐：Core 1.8.5 · V3.8**
 
-本地工作树现为Core1.8.7候选，新增主动审片、最多三次修正及明确指定2—3集的连续制作，待真实任务验证；下方固定链接仍指向正式1.8.5。
+本地工作树现为Core1.8.8候选，新增主动审片、最多三次修正及明确指定2—3集的连续制作，待真实任务验证；下方固定链接仍指向正式1.8.5。
 
 [使用SOP](https://github.com/zengyies-ux/AIGC_Vedio_codex/blob/core-v1.8.5/QUICK_START.md) · [完整制作启动词](https://github.com/zengyies-ux/AIGC_Vedio_codex/blob/core-v1.8.5/NEW_PROJECT_CONVERSATION_PROMPT.md) · [独立资产收集词](https://github.com/zengyies-ux/AIGC_Vedio_codex/blob/core-v1.8.5/ASSET_DOWNLOAD_PROMPT.txt) · [下载正式版](https://github.com/zengyies-ux/AIGC_Vedio_codex/releases/tag/core-v1.8.5)
 
@@ -50,4 +50,4 @@
 
 使用 Release 专用核心包 `Seedance_Codex_Workflow_Core_v1.8.5_2026-10-19_release.zip` 及同名校验文件；GitHub自动生成的Source code ZIP不作为团队制作包。核心包不含真实项目、素材、媒体或账号，升级保留个人资料。
 
-默认分支首页固定导航到正式标签；开发与旧版见[分支](https://github.com/zengyies-ux/AIGC_Vedio_codex/branches)和[历史Release](https://github.com/zengyies-ux/AIGC_Vedio_codex/releases)。自动画面复查、最多三次返修及同聊天2—3集留待1.8.7候选，不属于本版现有能力。
+默认分支首页固定导航到正式标签；开发与旧版见[分支](https://github.com/zengyies-ux/AIGC_Vedio_codex/branches)和[历史Release](https://github.com/zengyies-ux/AIGC_Vedio_codex/releases)。自动画面复查、最多三次返修及同聊天2—3集留待1.8.8候选，不属于本版现有能力。

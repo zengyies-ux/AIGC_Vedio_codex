@@ -1,9 +1,9 @@
 {
   "package_name": "Seedance_Codex_Workflow_Core",
-  "version": "1.8.7",
-  "release_date": "2026-10-19",
+  "version": "1.8.8",
+  "release_date": "2026-10-20",
   "update_policy": "manual_only_when_user_requests",
-  "summary": "Core1.8.7本地候选：减少介入，保原配音定位与原台词核对，生成后默认仅视觉复查，声音not_requested且不阻断采用/延长；普通定位疑点AI内部处理。羞涩为轻微局部泛红与自然反应，避免整脸通红及堆小动作。保三次有界修正、未知保护、多集隔离；正式仍1.8.5。 同版声音设计补丁：每段实际发声者明示稳定性别/年龄感/音区质感/语言口音，OS不代替音色；不新增成片听检。",
+  "summary": "Core1.8.8本地候选：整合成片声音免检、每段稳定音色、自然肤色与最多微微皮肤润红；原配音定位、视觉复查、3次有界修正和多集隔离保持。审片下载的视频只作本任务临时副本，用途结束后精确清理，保平台原作、用户素材和截图报告。启动词及版本入口同步，正式仍1.8.5，用户验证后再发布。",
   "release_status": "local_candidate",
-  "archive_suffix": "_voice"
+  "archive_suffix": ""
 }
