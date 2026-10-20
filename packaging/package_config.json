@@ -1,9 +1,9 @@
 {
   "package_name": "Seedance_Codex_Workflow_Core",
-  "version": "1.8.8",
+  "version": "1.9.0",
   "release_date": "2026-10-20",
   "update_policy": "manual_only_when_user_requests",
-  "summary": "Core1.8.8正式版：原配音定位自主完成、生成后仅视觉复查、每段稳定声线、自然肤色、必要审片视频用完精确清理；支持明确同聊天2—3集按集执行。Mac同聊天三集及另一单集共11原生+2延长完成，临时视频清理已核；用户认可运行与效率，人物表达与部分构图仍待后续改进。有界返修机制受控测试通过，本次现场未触发；Windows新增量待真机。",
-  "release_status": "release",
-  "archive_suffix": "_release"
+  "summary": "Core1.9.0／V3.9本地候选：人物性格落实为主动选择与回应，明确关系阶段内可设计亲密表达，长对白用连续场面而非机械反打，近景取景实际可读且不例行拉远收尾。多集逐集完成导演，现有音频/预算/网页/日志算法保持。正式仍1.8.8，新表现力待正常制作验证。",
+  "release_status": "local_candidate",
+  "archive_suffix": ""
 }

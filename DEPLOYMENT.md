@@ -4,6 +4,8 @@
 
 ## 先辨版本与目录
 
+本工作树现为Core1.9.0本地候选。只有用户明确测试候选时才用实际本地提交和candidate.json核部署；不猜远端候选标签或把1.8.8包当新导演规则。默认正式部署仍如下。
+
 当前正式推荐V3.8／Core1.8.8，发行标签core-v1.8.8，专用核心包Seedance_Codex_Workflow_Core_v1.8.8_2026-10-20_release.zip。旧候选保留，核清包名、清单与release_status=release。
 
 仓库：https://github.com/zengyies-ux/AIGC_Vedio_codex 。从[Core1.8.8正式Release](https://github.com/zengyies-ux/AIGC_Vedio_codex/releases/tag/core-v1.8.8)获取附件。Mac已验证同聊天连续三集及另一单集，共11条原生+2次延长，视觉复查与临时副本清理完成；含用户补充声线，声音未审，不宣称无人介入或全片无误。Windows x64 CPU提供部署适配，用户确认Core1.7.2实操可用；1.8.8在线资产和审片清理等增量仍待Windows真机增量验证。发布状态不等于所有平台或所有画面已验收。

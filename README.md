@@ -4,6 +4,8 @@
 
 **当前正式推荐：Core 1.8.8 · V3.8**
 
+本地工作树为Core1.9.0／V3.9候选，改进人物性格、关系互动、长对白场面和镜头取景；尚未发布或验证新画面。下方固定链接仍为正式1.8.8。
+
 Core1.8.8已获用户验证认可：一聊天连续三集与另一单集正常制作完成。运行与画面审查已可用，人物表现、部分构图和具体成片仍需要用户判断。
 
 [使用SOP](https://github.com/zengyies-ux/AIGC_Vedio_codex/blob/core-v1.8.8/QUICK_START.md) · [完整制作启动词](https://github.com/zengyies-ux/AIGC_Vedio_codex/blob/core-v1.8.8/NEW_PROJECT_CONVERSATION_PROMPT.md) · [独立资产收集词](https://github.com/zengyies-ux/AIGC_Vedio_codex/blob/core-v1.8.8/ASSET_DOWNLOAD_PROMPT.txt) · [下载正式版](https://github.com/zengyies-ux/AIGC_Vedio_codex/releases/tag/core-v1.8.8)
