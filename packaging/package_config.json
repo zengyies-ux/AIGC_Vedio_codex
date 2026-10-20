@@ -3,7 +3,7 @@
   "version": "1.9.1",
   "release_date": "2026-10-20",
   "update_policy": "manual_only_when_user_requests",
-  "summary": "Core1.9.1／V3.9本地候选：多人情绪/存在感、完整剧本与原台词双向核查、原代理职责细化、快速视觉检查overview、新人复制式上手和双代理资产收集。保预算/声线/音频免检/网页恢复；无人回复不自动出图，正式仍1.8.8，新效果待验证。",
-  "release_status": "local_candidate",
-  "archive_suffix": ""
+  "summary": "Core1.9.1正式版（流程与导演规则修订）：多人关系参与、完整剧本与原台词双向核查、代理职责细化、overview快速视觉检查、新人逐步入口及双代理资产收集。修复全覆盖和额外安全区审片冲突，保预算/声线/成片免听/网页恢复/未知保护。独立审查与工具测试不代表新增观感已验证；运行实测基线来自1.8.8，人物效果与Windows新增量待实际反馈。",
+  "release_status": "release",
+  "archive_suffix": "_release"
 }
