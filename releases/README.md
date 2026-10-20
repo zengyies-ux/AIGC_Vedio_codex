@@ -2,7 +2,7 @@
 
 这里保存用户明确要求发布的干净核心学习包。
 
-**当前正式发布：[Core1.9.1](https://github.com/zengyies-ux/AIGC_Vedio_codex/releases/tag/core-v1.9.1)**。本版为多人设计、台词核对、快速视觉检查与新人入口修订；既有运行链有1.8.8实测依据，新增审美效果仍待真实制作反馈。正式包带_release，保同号候选及旧版。
+**当前正式发布：[Core1.9.2](https://github.com/zengyies-ux/AIGC_Vedio_codex/releases/tag/core-v1.9.2)**。仅优化制作启动词填写排版与说明，运行行为沿用1.9.1；旧版本和附件保留。
 
 以下各版本说明均为历史时点；其中“当前”“latest”及待验状态仅描述当时，不替代本页顶部正式版本与[V3.8核验](../validation/director_v38.md)。
 
