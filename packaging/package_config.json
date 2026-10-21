@@ -1,9 +1,9 @@
 {
   "package_name": "Seedance_Codex_Workflow_Core",
-  "version": "1.9.3",
+  "version": "1.9.4",
   "release_date": "2026-10-21",
   "update_policy": "manual_only_when_user_requests",
-  "summary": "Core1.9.3本地候选：相邻硬切观看差异、动作阶段/移动依据轻查，避免重复切点和无因换位；无集数资产按语境与实图判断、通用角色图按需收集，来源事实和推断分开。原音频/预算/网页算法保持，不增加成片检查轮次；主项目待本地验证，正式仍1.9.2。",
+  "summary": "Core1.9.4本地候选：多人上半身取景与身份对应、人物态度的可见行为、减少无效动作和固定备选输出；多集就绪任务专用标签推进。保1.9.3硬切/资产规则及音频、预算、授权和生成日志算法；新观感与耗时待验证，正式仍1.9.2。",
   "release_status": "local_candidate",
   "archive_suffix": ""
 }
