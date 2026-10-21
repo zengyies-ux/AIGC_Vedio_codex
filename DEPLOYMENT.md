@@ -4,6 +4,8 @@
 
 ## 先辨版本与目录
 
+本工作树为Core1.9.3本地候选，用户明确测试时核实际本地提交及candidate.json；不要到GitHub寻找未发布的1.9.3包，也不要把正式包冒称已包含本地修订。默认正式部署如下。
+
 当前正式推荐V3.9／Core1.9.2，发行标签core-v1.9.2，专用核心包Seedance_Codex_Workflow_Core_v1.9.2_2026-10-20_release.zip。旧候选与1.8.8正式包保留，核包名、清单和release_status=release。新导演策略与快速检查的实片效果边界见验证说明。
 
 仓库：https://github.com/zengyies-ux/AIGC_Vedio_codex 。从[Core1.9.2正式Release](https://github.com/zengyies-ux/AIGC_Vedio_codex/releases/tag/core-v1.9.2)获取附件。Core1.8.8基线已在Mac验证同聊天连续三集及另一单集，共11条原生+2次延长，视觉复查与临时副本清理完成；含用户补充声线，声音未审，不宣称无人介入或全片无误。Windows x64 CPU提供部署适配，用户确认Core1.7.2实操可用；本版在线资产、快速检查和审片清理等增量仍待Windows真机增量验证。发布状态不等于所有平台或所有画面已验收。

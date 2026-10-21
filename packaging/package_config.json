@@ -1,9 +1,9 @@
 {
   "package_name": "Seedance_Codex_Workflow_Core",
-  "version": "1.9.2",
-  "release_date": "2026-10-20",
+  "version": "1.9.3",
+  "release_date": "2026-10-21",
   "update_policy": "manual_only_when_user_requests",
-  "summary": "Core1.9.2启动词易填补丁：本次任务信息各字段之间增加空行，明确按实际需求替换方括号说明与示例，可选项留空、执行范围只留一种选择。制作规则、模型、工具和生成行为与1.9.1一致。",
-  "release_status": "release",
-  "archive_suffix": "_release"
+  "summary": "Core1.9.3本地候选：相邻硬切观看差异、动作阶段/移动依据轻查，避免重复切点和无因换位；无集数资产按语境与实图判断、通用角色图按需收集，来源事实和推断分开。原音频/预算/网页算法保持，不增加成片检查轮次；主项目待本地验证，正式仍1.9.2。",
+  "release_status": "local_candidate",
+  "archive_suffix": ""
 }
