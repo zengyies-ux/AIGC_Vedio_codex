@@ -3,7 +3,7 @@
   "version": "1.9.6",
   "release_date": "2026-10-22",
   "update_policy": "manual_only_when_user_requests",
-  "summary": "Core1.9.6本地候选：主项目统一只出提示词、只填稿用户生成、授权AI生成三范围。共用完整前置，文本交付含分集分段正文与真实资产名称索引，缺源仍交完整预排；不因旧URL/生成授权误入制作网页。运行算法及正式1.9.2保持，停止独立半自动新增开发。 资产启动词可按一个目标剧目URL完成分类入共享库，不逐集重传；制作优先复用本地和入库记录，只有缺项等才回查在线。",
-  "release_status": "local_candidate",
-  "archive_suffix": ""
+  "summary": "Core1.9.6正式版：统一只出提示词、只填稿、授权生成；资产下载审核与剧目共享库入库独立准备，制作复用并保留C的实际场景适配核图。用户验证后授权发布，仍有运镜及台词反馈，后续候选另行处理。",
+  "release_status": "release",
+  "archive_suffix": "_release"
 }

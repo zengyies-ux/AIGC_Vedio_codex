@@ -4,13 +4,13 @@
 
 ## 先辨版本与目录
 
-本工作树为Core1.9.6本地候选，用户明确测试时核实际本地提交及candidate.json；不要到GitHub寻找未发布的1.9.6包，也不要把正式包冒称已包含本地修订。默认正式部署如下。
+当前正式推荐为Core1.9.6；按下面的固定标签与正式核心包部署。候选版本只有用户明确选择时才使用，不混同正式推荐。
 
-当前正式推荐V3.9／Core1.9.2，发行标签core-v1.9.2，专用核心包Seedance_Codex_Workflow_Core_v1.9.2_2026-10-20_release.zip。旧候选与1.8.8正式包保留，核包名、清单和release_status=release。新导演策略与快速检查的实片效果边界见验证说明。
+当前正式推荐V3.9／Core1.9.6，发行标签core-v1.9.6，专用核心包Seedance_Codex_Workflow_Core_v1.9.6_2026-10-22_release.zip。旧候选与1.8.8正式包保留，核包名、清单和release_status=release。新导演策略与快速检查的实片效果边界见验证说明。
 
-仓库：https://github.com/zengyies-ux/AIGC_Vedio_codex 。从[Core1.9.2正式Release](https://github.com/zengyies-ux/AIGC_Vedio_codex/releases/tag/core-v1.9.2)获取附件。Core1.8.8基线已在Mac验证同聊天连续三集及另一单集，共11条原生+2次延长，视觉复查与临时副本清理完成；含用户补充声线，声音未审，不宣称无人介入或全片无误。Windows x64 CPU提供部署适配，用户确认Core1.7.2实操可用；本版在线资产、快速检查和审片清理等增量仍待Windows真机增量验证。发布状态不等于所有平台或所有画面已验收。
+仓库：https://github.com/zengyies-ux/AIGC_Vedio_codex 。从[Core1.9.6正式Release](https://github.com/zengyies-ux/AIGC_Vedio_codex/releases/tag/core-v1.9.6)获取附件。Core1.8.8基线已在Mac验证同聊天连续三集及另一单集，共11条原生+2次延长，视觉复查与临时副本清理完成；含用户补充声线，声音未审，不宣称无人介入或全片无误。Windows x64 CPU提供部署适配，用户确认Core1.7.2实操可用；本版在线资产、快速检查和审片清理等增量仍待Windows真机增量验证。发布状态不等于所有平台或所有画面已验收。
 
-- 从固定标签`core-v1.9.2`读取`packaging/package_config.json`、`releases/latest.json`及本说明，下载上述正式ZIP与同名SHA文件，核内容版本、清单、实际tag提交和哈希。不把旧候选或未核的latest当正式版。
+- 从固定标签`core-v1.9.6`读取`packaging/package_config.json`、`releases/latest.json`及本说明，下载上述正式ZIP与同名SHA文件，核内容版本、清单、实际tag提交和哈希。不把旧候选或未核的latest当正式版。
 - `main`首页只作正式发布导航；源码开发目录与干净Core制作目录分开，不clone历史main后直接运行旧规则，不使用GitHub自动生成的Source code ZIP替代专用核心包。候选版须用户明确选择并核其实际状态。
 - 用户没给安装目录时，在本机文档目录选清楚命名的新目录；已有项目不得覆盖。Windows路径使用本机实际盘符与反斜杠，含空格路径正确引用，不要求用户改成Unix路径或手工设置PATH。
 
