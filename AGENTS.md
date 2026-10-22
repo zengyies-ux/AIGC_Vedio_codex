@@ -10,7 +10,7 @@
 
 默认验证模式：新解读、分段/候选位置一次整体审核后出正式稿，已有采用阶段直接继承，不追加审批。用户明确授权当集自主制作时，在该范围内部核查后直接出稿并落盘授权，不因升级失效，也不据此启用全局常规模式；自主前置与网页准备／生成授权分别记录，见[交付与续做](memories/seedance_workflow/continuity_and_review.md#execution-handoff)。用户认可流程/效果并落盘启用常规模式后，内部核查采用出稿；沉默、文档验收或发布不切模式。先查本地／线上及已有依据，能内部决定就推进；只有真实缺失、权限或无法内解的实质冲突才问。音频定位不索取用户试听／时码，生成音频不作为采用门槛；少确认不省设计。
 
-当前工作树为V3.9／Core1.9.4本地候选，正式发布仍Core1.9.2；本轮调整多人取景、角色态度的可见行为及多集就绪任务调度，保留1.9.3有效硬切与资产规则，实际新画面和耗时待验证。变更与证据见[V3.8核验](validation/director_v38.md)，平台范围见[部署说明](DEPLOYMENT.md)。用户只填材料目录，工作流位置由当前项目识别。以连续旁白含义、台词与人物目的设计自然行动和直接回应；不把解释性情绪标签当可见画面，也不把内心旁白一律改成空镜。正文保对象、态度和结果，普通动作不拆关节／重心步骤；细则见[冲突场面](memories/seedance_workflow/director_os.md#conflict-staging)。多人优先胸腰以上的近景／紧凑关系取景，保相关脸和互动目标；全员空间依据不等于全员必须同框，详见[镜头执行](memories/seedance_workflow/execution_rules.md#shots)。连续声音跨镜，不按逐句时长机械切，见[声音跨镜](memories/seedance_workflow/execution_rules.md#audio-shot-independence)。
+当前工作树为V3.9／Core1.9.5本地候选，正式发布仍Core1.9.2；本轮接入正常飞书登录恢复、提示词拒绝后的合规改稿与完整重填，并使方法库选择、情绪跨切和多人注意力落实到正文；保留既有预算、资产、自然表演和调度规则，实际效果待验证。变更与证据见[V3.8核验](validation/director_v38.md)，平台范围见[部署说明](DEPLOYMENT.md)。用户只填材料目录，工作流位置由当前项目识别。以连续旁白含义、台词与人物目的设计自然行动和直接回应；不把解释性情绪标签当可见画面，也不把内心旁白一律改成空镜。正文保对象、态度和结果，普通动作不拆关节／重心步骤；细则见[冲突场面](memories/seedance_workflow/director_os.md#conflict-staging)。多人优先胸腰以上的近景／紧凑关系取景，保相关脸和互动目标；全员空间依据不等于全员必须同框，详见[镜头执行](memories/seedance_workflow/execution_rules.md#shots)。连续声音跨镜，不按逐句时长机械切，见[声音跨镜](memories/seedance_workflow/execution_rules.md#audio-shot-independence)。
 
 从原材料开始的同类完整单集默认A剧本／冲突、B声音／时间、C资产／空间、D视觉导演／目标观众四项职责协作，模型均为GPT-6.1-sol；A／B／C既有high、D low，当次明确设置优先。D优先在前序交回后独立承担视觉职责，分段前提案、初稿后复审各一次；实际执行者／转任和采用变化沿现有记录说明，主控对删改后的持续语义、动作和空间负责；沿用采用设计、自带正式稿、小修或用户指定单智能体不强制补齐协作角色，容量不可用不无限重试，见[协作职责](memories/seedance_workflow/director_os.md#collaboration)。
 
@@ -83,6 +83,8 @@
 按[模板](memories/seedance_workflow/prompt_template.md)保留制作设置、角色映射、七栏/可选栏、逐镜、摄影、现场对白、目标语言和无BGM。按已设计场面分别写连续声音和真实切镜，再交叉核对；不将逐句音频区间复制成逐镜区间。原轨含旁白与台词：现场对白替换原台词，旁白后期编排，不重复加算对白。完整覆盖实际原轨，按随音轨长度增加的最低余量规划素材，分配到本轮实际制作段，不能留待后续占位；默认采用最低整数目标，超过目标须说明实际需要且不扩大生成授权。具体计算与可裁位置只按[唯一时间政策](memories/seedance_workflow/execution_rules.md#sound-and-time)处理。时间对应留分段／制作设置，正文不放后期调度。
 
 写入项目`prompts/`并更新索引；当前正式稿、真实素材、方式、整数时长、可执行条件及实际回执沿用[交付与续做](memories/seedance_workflow/continuity_and_review.md#execution-handoff)分工。用户指定网页任务才读[剧梦执行技能](extensions/seedance-jumeng-operator/SKILL.md)，默认只准备，核真实源、区间、视频槽、正文节点、模式及目标参数后正常保存回读，不以生成测试准备。一次明确本集原生及所需延长准备授权覆盖该范围；明确整集生成授权可覆盖原生提交→等结果→必要局部核源→本集所需的一次延长提交及结果记录，按[完整生成规程](extensions/seedance-jumeng-operator/references/generation-execution.md)执行，不逐段重复问。准备范围内缺源仅相关段待源，通知就绪后由GPT核源续做；准备、提交、生成成功和可用于接续分别记。聊天默认给链接、变化、缺项与必要风险，用户要全文或未建项目才内联。审核先修画面，台词本身被拒才交用户决定，不自行改词。
+
+制作网站会话过期时，已获授权的同账号／既有权限飞书恢复沿[登录恢复](extensions/seedance-jumeng-operator/references/generation-execution.md#login-recovery)执行，恢复后重核原目标及回执。提示词审核拒绝沿[合规改稿](memories/seedance_workflow/field_lessons.md#moderation-recovery)定位内容，保存新稿后[完整重填并重绑](extensions/seedance-jumeng-operator/references/fill-and-verify.md#moderation-refill)；保原台词、真实失败与同根次数，不恢复用户叫停的任务。
 
 ## 6. 状态与知识维护
 

@@ -1,9 +1,9 @@
 {
   "package_name": "Seedance_Codex_Workflow_Core",
-  "version": "1.9.4",
-  "release_date": "2026-10-21",
+  "version": "1.9.5",
+  "release_date": "2026-10-22",
   "update_policy": "manual_only_when_user_requests",
-  "summary": "Core1.9.4本地候选：多人上半身取景与身份对应、人物态度的可见行为、减少无效动作和固定备选输出；多集就绪任务专用标签推进。保1.9.3硬切/资产规则及音频、预算、授权和生成日志算法；新观感与耗时待验证，正式仍1.9.2。",
+  "summary": "Core1.9.5本地候选：授权内正常飞书登录恢复；审核拒绝按实际反馈合规修订、清空正文整段重填并重建真实引用；方法库定向采用、情绪/动作跨切与多人关系取景。保原台词、预算、单镜上限及原回执和修正累计；新流程/观感待验证，正式仍1.9.2。",
   "release_status": "local_candidate",
   "archive_suffix": ""
 }
