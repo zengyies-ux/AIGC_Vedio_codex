@@ -1,5 +1,7 @@
 # 轻量网页回执与审修日志（Core 1.9.1 本地候选）
 
+本工具只用于已授权的制作网页准备／生成，`prepare`仍指网页填稿。主线“只出提示词”和独立“仅资产入库”都不创建本日志，也不是新增authorization.mode；用现有项目状态与提示索引记录文字交付，不把`prompt_only`传入此工具。
+
 `journal.py`是宿主LLM的提交前后记录工具，使用Python标准库。它不连接浏览器、不点击、不等待、不下载、不调用私有API，也不支付。完整操作规程见[授权生成—等待—核源—续做](../../extensions/seedance-jumeng-operator/references/generation-execution.md)。
 
 默认`prepare`不能取得提交许可。明确本集`generate`授权后，AI使用现有目标／卡／采用稿／素材事实创建一份私有记录，逐卡同页核对，先写`intent`；原子保存并回读成功后才返回一次`one_use_click_permission`。宿主在当前已核页面正常点击一次。重新读记录、重复`intent`、失败、未知回执和中断都不会补发许可。记录中意图token仅是本地意图，绝不是平台任务ID或支付回执。
