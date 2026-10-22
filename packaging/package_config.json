@@ -1,9 +1,9 @@
 {
   "package_name": "Seedance_Codex_Workflow_Core",
-  "version": "1.9.6",
+  "version": "2.0.0",
   "release_date": "2026-10-22",
   "update_policy": "manual_only_when_user_requests",
-  "summary": "Core1.9.6正式版：统一只出提示词、只填稿、授权生成；资产下载审核与剧目共享库入库独立准备，制作复用并保留C的实际场景适配核图。用户验证后授权发布，仍有运镜及台词反馈，后续候选另行处理。",
-  "release_status": "release",
-  "archive_suffix": "_release"
+  "summary": "Core2.0.0本地候选：镜内推拉摇/持续跟拍与自然手持、因果环境反馈和长场面有据画面；A/B/D原句来源与一次发言检查，兼容s括号格式并提示具名提前开口；补电脑输入/光标响应，保三执行范围、资产准备、预算及生成门禁。正式1.9.6已发布，新实片待验证。",
+  "release_status": "local_candidate",
+  "archive_suffix": ""
 }

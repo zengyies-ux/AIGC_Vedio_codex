@@ -9,8 +9,8 @@ from pathlib import Path
 import re
 
 NUM = r'\d+(?:\.\d+)?'
-RANGE = rf'({NUM})\s*[–—-]\s*({NUM})\s*秒'
-SHOT = re.compile(rf'^镜头\s*(\d+)【\s*{RANGE}[^\n]*', re.M)
+RANGE = rf'({NUM})\s*(?:秒|s)?\s*[–—-]\s*({NUM})\s*(?:秒|s)'
+SHOT = re.compile(rf'^镜头\s*(\d+)【\s*\(?\s*{RANGE}[^\n]*', re.M)
 
 
 def assess_episode_budget(episode=None, base_dir=None):
@@ -136,7 +136,13 @@ def inspect(text, max_shot_seconds=2.5, generation_mode=None):
     if count and int(count[1]) != len(matches):
         issue(errors, 'shot_count', '声明镜数与编号镜头数不一致')
     prev = 0.0
-    sounds = [(float(m[1]),float(m[2])) for m in re.finditer(rf'^局部\s*{RANGE}', body,re.M)]
+    sound_section = re.search(r'【声音时序】\s*\n(.*?)(?=\n【|\Z)', body, re.S)
+    sound_text = sound_section[1] if sound_section else ''
+    sounds = [(float(m[1]), float(m[2])) for m in
+              re.finditer(rf'^(?:局部\s*)?{RANGE}', sound_text, re.M)]
+    voices = [(float(m[1]), float(m[2]), m[3].strip()) for m in
+              re.finditer(rf'^(?:局部\s*)?{RANGE}\s*[｜|]\s*([^→\n｜|]+)→', sound_text, re.M)]
+    speakers = sorted({v[2] for v in voices}, key=len, reverse=True)
     for a,b in sounds:
         if b <= a or (duration and b > float(duration[1]) + 1e-6):
             issue(errors, 'sound_range', f'{a}–{b}')
@@ -155,10 +161,26 @@ def inspect(text, max_shot_seconds=2.5, generation_mode=None):
             issue(errors,'coverage_gap_or_overlap',f'镜头{number}起点{a}，前镜终点{prev}')
         prev=b
         # Explicit single opening times only. A whole-line range is not a shot length.
-        for opening in re.finditer(rf'(?:声音时序|局部|在)\s*({NUM})\s*秒开口', chunk):
+        for opening in re.finditer(rf'(?<![\d.])({NUM})\s*(?:秒|s)\s*开口', chunk):
             when=float(opening[1])
             if not (a-1e-6 <= when < b):
                 issue(errors,'opening_outside_shot',f'镜头{number}开口{when}不在{a}–{b}')
+        # This is only a narrow textual cue, never a semantic speech verdict.
+        # Use known names and continuous windows; do not invent missing subjects.
+        if speakers:
+            named_subject = re.compile(r'^(?:(?:具体画面|现场对白)[：:]\s*)?(' + '|'.join(re.escape(name) for name in speakers) + r')')
+            for clause in re.split(r'[。；;\n]', chunk):
+                if '开口' not in clause or re.search(r'准备|等待|等.{0,8}开口|尚未|还未|没有|未曾|不再|不会|不开口|未开口|无词', clause):
+                    continue
+                for opening in re.finditer('开口', clause):
+                    subject = named_subject.match(clause.strip())
+                    if not subject:
+                        continue
+                    speaker = subject[1]
+                    if not any(name == speaker and a < end and start < b
+                               for start, end, name in voices):
+                        issue(warnings, 'inspect_opening_without_sound',
+                              f'镜头{number}描述{speaker}开口，但本镜无该角色已列声音窗口；核提前/重复开口或未列发言，不据此判定新增台词')
         if re.search(r'切到|切回|再回到|硬切至|(?:近景|关系镜)切',m[0]+chunk):
             issue(warnings,'inspect_hidden_cut',f'镜头{number}含切换用语，请确认真实边界均单列')
         if re.search(r'沉默|没有说出话|闭口|安静',chunk) and any(a < d and c < b for c,d in sounds):

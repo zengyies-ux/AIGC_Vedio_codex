@@ -328,4 +328,49 @@ class ExtensionSourceChecks(unittest.TestCase):
         with self.assertRaises(ValueError):
             inspect(sample(), generation_mode='invalid')
 
+class OpeningChecks(unittest.TestCase):
+    def warnings(self, text):
+        return [w for w in inspect(text)['warnings'] if w['code'] == 'inspect_opening_without_sound']
+
+    def test_early_opening_before_later_window(self):
+        # Actual EP17-03 / EP18-01 patterns, with names anonymized.
+        for prose in ['具体画面：甲打量结束，盯住乙，带着质疑开口。',
+                      '具体画面：乙留在身后；甲站直面对乙开口。']:
+            text = sample(((0, 1.4), (1.4, 2.9), (2.9, 4.4)),
+                          '1.92—3.64秒｜甲→乙｜“Is that really you?”｜原句一次',
+                          {1: prose, 2: '现场对白：甲在1.92秒开口，继续跨镜。'})
+            self.assertEqual(len(self.warnings(text)), 1)
+            self.assertIn('镜头1描述甲', self.warnings(text)[0]['detail'])
+            self.assertTrue(inspect(text)['structural_pass'])
+
+    def test_preparation_and_waiting_not_treated_as_speech(self):
+        for prose in ['具体画面：甲准备开口。', '具体画面：甲尚未开口。',
+                      '具体画面：甲等乙开口。', '具体画面：甲没有开口。',
+                      '具体画面：甲压住嘴角，等待开口。']:
+            self.assertFalse(self.warnings(sample(sound='局部2–4秒｜甲→乙｜“Wait.”', prose={1:prose})))
+
+    def test_legal_late_start_offscreen_continuation_and_multiple_lines(self):
+        text = sample(sound='1–2.3秒｜甲→乙｜“Wait.”\n2.5–4秒｜甲→乙｜“Wait.”',
+                      prose={1:'具体画面：甲在1秒开口，继续跨镜。',
+                             2:'现场对白：甲画外接续同句，2.5秒开口下一句。'})
+        self.assertFalse(self.warnings(text))
+        self.assertTrue(inspect(text)['structural_pass'])
+        self.assertEqual(text.count('“Wait.”'), 2)
+
+    def test_other_speaker_window_does_not_cover_opening(self):
+        text = sample(sound='0–1秒｜乙→甲｜“Hello.”\n2–4秒｜甲→乙｜“Wait.”',
+                      prose={1:'具体画面：甲面对乙开口。'})
+        self.assertEqual(len(self.warnings(text)), 1)
+
+    def test_production_s_parentheses_and_unprefixed_windows(self):
+        text=sample().replace('0–2秒','(0s-2s)').replace('2–3.4秒','(2s-3.4s)').replace('3.4–5.6秒','(3.4s-5.6s)')
+        text=text.replace('局部1.0–5.0秒','1.0s—5.0s')
+        self.assertEqual(len(inspect(text)['shots']), 3)
+        self.assertTrue(inspect(text)['structural_pass'])
+        self.assertIn('sound_range', {e['code'] for e in inspect(text.replace('1.0s—5.0s','1.0s—6.0s'))['errors']})
+
+    def test_s_and_unprefixed_numeric_opening_outside_shot(self):
+        for prose in ['现场对白：甲1.0秒开口。', '现场对白：甲在1.0s开口。']:
+            self.assertIn('opening_outside_shot', {e['code'] for e in inspect(sample(prose={2:prose}))['errors']})
+
 if __name__=='__main__': unittest.main()
