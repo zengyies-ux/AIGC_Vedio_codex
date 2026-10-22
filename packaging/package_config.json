@@ -3,7 +3,7 @@
   "version": "2.0.0",
   "release_date": "2026-10-22",
   "update_policy": "manual_only_when_user_requests",
-  "summary": "Core2.0.0本地候选：镜内推拉摇/持续跟拍与自然手持、因果环境反馈和长场面有据画面；A/B/D原句来源与一次发言检查，兼容s括号格式并提示具名提前开口；补电脑输入/光标响应，保三执行范围、资产准备、预算及生成门禁。正式1.9.6已发布，新实片待验证。",
-  "release_status": "local_candidate",
-  "archive_suffix": ""
+  "summary": "Core2.0.0正式版：镜内推拉摇与跟随、长场面有据画面承接、一次发言与具名早开口提示、现实设备交互。用户授权发布，119项检查通过，新增实片/声音效果待验证。V4长任务另在本地独立开发，不混入本版。",
+  "release_status": "release",
+  "archive_suffix": "_release"
 }
